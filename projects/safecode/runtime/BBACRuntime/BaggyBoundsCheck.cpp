@@ -54,6 +54,9 @@
 #define TAG unsigned tag
 
 #define DEBUG(x)
+#if __FreeBSD__ >= 11
+#define MAP_NORESERVE 0
+#endif
 
 NAMESPACE_SC_BEGIN
 

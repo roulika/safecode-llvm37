@@ -16,6 +16,10 @@
 
 using std::cerr;
 
+#if __FreeBSD__ >= 11
+#define MAP_NORESERVE 0
+#endif
+
 #define DEBUG (0)
 
 #if ( __WORDSIZE == 64 )
