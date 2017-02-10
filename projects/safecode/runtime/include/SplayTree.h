@@ -19,27 +19,29 @@
 
 template<typename dataTy>
 struct range_tree_node {
-  range_tree_node(void* s, void* e) : left(0), right(0), start(s), end(e) {}
-  range_tree_node() : left(0), right(0), start(0), end(0) {}
+  range_tree_node(void* s, void* e, unsigned t = 0) : left(0), right(0), start(s), end(e), type(t) {}
+  range_tree_node() : left(0), right(0), start(0), end(0), type(0) {}
   template<class O>
-  void do_act(O& act) { act(start, end, data); }
+  void do_act(O& act) { act(start, end, data, type); }
   range_tree_node* left;
   range_tree_node* right;
   void* start;
   void* end;
+  unsigned type;
   dataTy data;
 };
 
 template<>
 struct range_tree_node <void>{
-  range_tree_node(void* s, void* e) : left(0), right(0), start(s), end(e) {}
-  range_tree_node() : left(0), right(0), start(0), end(0) {}
+  range_tree_node(void* s, void* e, unsigned t = 0) : left(0), right(0), start(s), end(e), type(t) {}
+  range_tree_node() : left(0), right(0), start(0), end(0), type(0) {}
   template<class O>
-  void do_act(O& act) { act(start, end); }
+  void do_act(O& act) { act(start, end, type); }
   range_tree_node* left;
   range_tree_node* right;
   void* start;
   void* end;
+  unsigned type;
 };
 
 template<typename T, class _Alloc>
@@ -190,6 +192,32 @@ class RangeSplayTree {
     return Tree;
   }
 
+  // Overload Method to insert an object with a registered type
+  tree_node* __insert(void* start, void* end, unsigned type) {
+    Tree = splay(Tree, start);
+    //If the key is already in, fail the insert
+    if (Tree && !key_lt(start, Tree) && !key_gt(start, Tree))
+      return 0;
+    
+    tree_node* n = __node_alloc.allocate(1);
+    __node_alloc.construct(n, tree_node(start,end,type));
+    if (Tree) {
+      if (key_lt(start, Tree)) {
+        n->left = Tree->left;
+        n->right = Tree;
+        Tree->left = 0;
+      } else {
+        n->right = Tree->right;
+        n->left = Tree;
+        Tree->right = 0;
+      }
+    }
+    Tree = n;
+    return Tree;
+  }  
+
+
+
   bool __remove(void* key) {
     if (!Tree) return false;
     Tree = splay(Tree, key);
@@ -261,6 +289,11 @@ class RangeSplaySet
   bool insert(void* start, void* end) {
     return 0 != Tree.__insert(start,end);
   }
+
+  bool insert(void* start, void* end, unsigned type) {
+    return 0 != Tree.__insert(start,end);
+  }
+
   
   bool remove(void* key) {
     return Tree.__remove(key);
@@ -280,6 +313,18 @@ class RangeSplaySet
     end = t->end;
     return true;
   }
+
+  // Overload method to return the type too
+  bool find(void* key, void*& start, void*& end, unsigned &type) {
+    range_tree_node<void>* t = Tree.__find(key);
+    if (!t) return false;
+    start = t->start;
+    end = t->end;
+    type = t->type;
+    return true;
+  }
+
+
   bool find(void* key) {
     range_tree_node<void>* t = Tree.__find(key);
     if (!t) return false;

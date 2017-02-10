@@ -393,6 +393,7 @@ static inline void
 _internal_poolregister (DebugPoolTy *Pool,
                         void * allocaptr,
                         unsigned NumBytes,
+                        unsigned AllocType,
                         TAG,
                         const char * SourceFilep,
                         unsigned lineno,
@@ -447,7 +448,7 @@ _internal_poolregister (DebugPoolTy *Pool,
   // Add the object to the pool's splay of valid objects.
   //
   //
-  if (!(SPTree->insert(allocaptr, (char*) allocaptr + NumBytes - 1))) {
+  if (!(SPTree->insert(allocaptr, (char*) allocaptr + NumBytes - 1, AllocType))) {
   // Note that the linker
   // may merge together global objects that are identical (or for which one is
   // a prefix of another); allow such global objects to be reregistered.
@@ -466,11 +467,12 @@ _internal_poolregister (DebugPoolTy *Pool,
       case Global: {
         void * start;
         void * end;
+        unsigned type;
 #ifndef NDEBUG
-        bool fs = SPTree->find (allocaptr, start, end);
+        bool fs = SPTree->find (allocaptr, start, end, type);
         assert (fs);
 #else
-        SPTree->find (allocaptr, start, end);
+        SPTree->find (allocaptr, start, end, type);
 #endif
         SPTree->remove (start);
         void * NewEnd = ((unsigned char *)allocaptr + NumBytes - 1);
@@ -491,7 +493,7 @@ _internal_poolregister (DebugPoolTy *Pool,
         void * end;
         SPTree->find (allocaptr, start, end);
         SPTree->remove (start);
-        SPTree->insert(allocaptr, (char*) allocaptr + NumBytes - 1);
+        SPTree->insert(allocaptr, (char*) allocaptr + NumBytes - 1, AllocType);
         break;
       }
     }
@@ -509,7 +511,9 @@ _internal_poolregister (DebugPoolTy *Pool,
 //  the object being registered.
 //
 void
-pool_register (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
+pool_register (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes, unsigned AllocType) {\
+printf("Printing from pool_register\n"); 
+fflush(stdout); 
 #if 0
   //
   // If this is a singleton object within a type-known pool, don't add it to
@@ -534,7 +538,8 @@ pool_register (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
   //
   _internal_poolregister (Pool,
                           allocaptr,
-                          NumBytes, 0,
+                          NumBytes, 
+                          AllocType, 0,
                           "<unknown",
                           0,
                           Heap);
@@ -551,7 +556,8 @@ pool_register (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
 void
 pool_register_debug (DebugPoolTy *Pool,
                      void * allocaptr,
-                     unsigned NumBytes, TAG,
+                     unsigned NumBytes,
+                     unsigned AllocType, TAG,
                      const char * SourceFilep,
                      unsigned lineno) {
   //
@@ -563,6 +569,8 @@ pool_register_debug (DebugPoolTy *Pool,
   // FIXME: disabling because the code that does poolcheck for singleton
   // objects, uses SearchForContainingSlab, which assumes it is being called
   // from a poolfree, and does not handle pointers to the middle of an object.
+printf("Printing from pool_register_debug %d %d\n", AllocType, NumBytes);
+fflush(stdout);
 #if 0
   if (Pool && (NumBytes == Pool->NodeSize)) {
     return
@@ -577,7 +585,8 @@ pool_register_debug (DebugPoolTy *Pool,
 
   _internal_poolregister (Pool,
                           allocaptr,
-                          NumBytes, tag,
+                          NumBytes,
+                          AllocType, tag,
                           SourceFilep,
                           lineno,
                           Heap);
@@ -617,13 +626,14 @@ void
 pool_reregister (DebugPoolTy *Pool,
                  void * newptr,
                  void * oldptr,
-                 unsigned NumBytes) {
+                 unsigned NumBytes,
+                 unsigned AllocType) {
   if (oldptr == NULL) {
     //
     // If the old pointer is NULL, then we know that this is essentially a
     // regular heap allocation; treat it as such.
     //
-    pool_register (Pool, newptr, NumBytes);
+    pool_register (Pool, newptr, NumBytes, AllocType);
   } else if (NumBytes == 0) {
     //
     // Allocating a buffer of zero bytes is essentially a deallocation of the
@@ -635,7 +645,7 @@ pool_reregister (DebugPoolTy *Pool,
     // Otherwise, this is a true reallocation.  Unregister the old memory and
     // register the new memory.
     pool_unregister (Pool, oldptr);
-    pool_register(Pool, newptr, NumBytes);
+    pool_register(Pool, newptr, NumBytes, AllocType);
   }
 
   return;
@@ -646,6 +656,7 @@ pool_reregister_debug (DebugPoolTy *Pool,
                        void * newptr,
                        void * oldptr,
                        unsigned NumBytes,
+                       unsigned AllocType,
                        TAG,
                        const char * SourceFilep,
                        unsigned lineno) {
@@ -654,7 +665,7 @@ pool_reregister_debug (DebugPoolTy *Pool,
     // If the old pointer is NULL, then we know that this is essentially a
     // regular heap allocation; treat it as such.
     //
-    pool_register_debug (Pool, newptr, NumBytes, tag, SourceFilep, lineno);
+    pool_register_debug (Pool, newptr, NumBytes, AllocType, tag, SourceFilep, lineno);
   } else if (NumBytes == 0) {
     //
     // Allocating a buffer of zero bytes is essentially a deallocation of the
@@ -666,7 +677,7 @@ pool_reregister_debug (DebugPoolTy *Pool,
     // Otherwise, this is a true reallocation.  Unregister the old memory and
     // register the new memory.
     pool_unregister_debug (Pool, oldptr, tag, SourceFilep, lineno);
-    pool_register_debug   (Pool, newptr, NumBytes, tag, SourceFilep, lineno);
+    pool_register_debug   (Pool, newptr, NumBytes, AllocType, tag, SourceFilep, lineno);
   }
 
   return;
@@ -682,16 +693,21 @@ pool_reregister_debug (DebugPoolTy *Pool,
 void
 pool_register_stack_debug (DebugPoolTy *Pool,
                            void * allocaptr,
-                           unsigned NumBytes, TAG,
+                           unsigned NumBytes, 
+                           unsigned AllocType, TAG,
                            const char * SourceFilep,
                            unsigned lineno) {
+  
+  printf("Printing from pool_register_stack_debug\n");
+  fflush(stdout);
   //
   // Use the common registration function.  Mark the allocation as a stack
   // allocation.
   //
   _internal_poolregister (Pool,
                           allocaptr,
-                          NumBytes, tag,
+                          NumBytes, 
+                          AllocType, tag,
                           SourceFilep,
                           lineno,
                           Stack);
@@ -722,14 +738,15 @@ pool_register_stack_debug (DebugPoolTy *Pool,
 //  a stack allocation without debug information.
 //
 void
-pool_register_stack (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
+pool_register_stack (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes, unsigned AllocType) {
   //
   // Use the common registration function.  Mark the allocation as a stack
   // allocation.
   //
   _internal_poolregister (Pool,
                           allocaptr,
-                          NumBytes, 0,
+                          NumBytes, 
+                          AllocType, 0,
                           "<Unknown>",
                           0,
                           Stack);
@@ -743,7 +760,10 @@ pool_register_stack (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
 //  a global variable.
 //
 void
-pool_register_global (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
+pool_register_global (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes, unsigned AllocType) {
+  printf("Printing from register_global %d %d\n",  AllocType, NumBytes);
+  fflush(stdout);
+
   //
   // Use the common registration function.  Mark the allocation as a stack
   // allocation.
@@ -751,6 +771,7 @@ pool_register_global (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
   _internal_poolregister (Pool,
                           allocaptr,
                           NumBytes,
+                          AllocType,
                           0,
                           "UNKNOWN",
                           0,
@@ -767,16 +788,20 @@ pool_register_global (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
 void
 pool_register_global_debug (DebugPoolTy *Pool,
                             void * allocaptr,
-                            unsigned NumBytes, TAG,
+                            unsigned NumBytes,
+                            unsigned AllocType, TAG,
                             const char * SourceFilep,
                             unsigned lineno) {
+  printf("Printing from pool_register_global_debug %d %d\n", AllocType, NumBytes);
+  fflush(stdout);
   //
   // Use the common registration function.  Mark the "allocation" as a global
   // object.
   //
   _internal_poolregister (Pool,
                           allocaptr,
-                          NumBytes, tag,
+                          NumBytes,
+                          AllocType, tag,
                           SourceFilep,
                           lineno,
                           Global);
@@ -1857,7 +1882,8 @@ poolrealloc (DebugPoolTy *Pool, void *Node, unsigned NumBytes) {
 void *
 __sc_dbg_poolrealloc_debug (DebugPoolTy *Pool,
                             void *Node,
-                            unsigned NumBytes, TAG,
+                            unsigned NumBytes,
+                            unsigned AllocType, TAG,
                             const char * SourceFilep,
                             unsigned lineno) {
   //
@@ -1867,7 +1893,7 @@ __sc_dbg_poolrealloc_debug (DebugPoolTy *Pool,
   if (Node == 0) {
     void * New = poolalloc(Pool, NumBytes);
     if (ConfigData.RemapObjects) New = pool_shadow (New, NumBytes);
-    pool_register_debug (Pool, New, NumBytes, tag, SourceFilep, lineno);
+    pool_register_debug (Pool, New, NumBytes, AllocType, tag, SourceFilep, lineno);
     return New;
   }
 
@@ -1908,7 +1934,7 @@ __sc_dbg_poolrealloc_debug (DebugPoolTy *Pool,
   // pool.
   //
   if (ConfigData.RemapObjects) New = pool_shadow (New, NumBytes);
-  pool_register_debug (Pool, New, NumBytes, tag, SourceFilep, lineno);
+  pool_register_debug (Pool, New, NumBytes, AllocType, tag, SourceFilep, lineno);
 
   //
   // Determine the number of bytes to copy into the new object.

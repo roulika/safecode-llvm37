@@ -123,11 +123,11 @@ extern "C" {
 
   void * poolargvregister (int argc, char ** argv);
 
-  void pool_register       (PPOOL, void *allocaptr, unsigned NumBytes);
-  void pool_register_debug (PPOOL, void * p, unsigned size, TAG, SRC_INFO);
+  void pool_register       (PPOOL, void *allocaptr, unsigned NumBytes, unsigned AllocType);
+  void pool_register_debug (PPOOL, void * p, unsigned size, unsigned type, TAG, SRC_INFO);
   void pool_register_stack      (PPOOL, void * p, unsigned size);
   void pool_register_stack_debug(PPOOL, void * p, unsigned size, TAG, SRC_INFO);
-  void pool_register_global (PPOOL, void * p, unsigned size);
+  void pool_register_global (PPOOL, void * p, unsigned size, unsigned type);
   void pool_register_global_debug(PPOOL, void * p, unsigned size, TAG, SRC_INFO);
 
   void pool_reregister (PPOOL, void * p, void * q, unsigned size);

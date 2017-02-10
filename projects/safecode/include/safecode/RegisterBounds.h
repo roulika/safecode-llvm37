@@ -42,7 +42,7 @@ protected:
 
   /// Helper function to register the bound information of a variable into a
   /// particular pool.
-  void RegisterVariableIntoPool(llvm::Value * PH, llvm::Value * val, llvm::Value * AllocSize, llvm::Instruction * InsertBefore);
+  void RegisterVariableIntoPool(llvm::Value * PH, llvm::Value * val, llvm::Value * AllocSize, llvm::Value * AllocType, llvm::Instruction * InsertBefore);
 
   /// Helper function to create the body of sc.register_globals /
   /// sc.register_main. It inserts an empty basicblock and a ret void

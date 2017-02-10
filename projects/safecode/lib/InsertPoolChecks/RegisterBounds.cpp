@@ -24,6 +24,8 @@
 
 using namespace llvm;
 
+int AllocID = 1;
+
 namespace {
   // Statistics
   STATISTIC (RegisteredGVs,      "Number of registered global variables");
@@ -159,7 +161,12 @@ RegisterGlobalVariables<T>::registerGV(GlobalVariable * GV,
     return;
   }
   Value * AllocSize = ConstantInt::get (csiType, TypeSize);
-  RegisterVariableIntoPool(PH, GV, AllocSize, InsertBefore);
+  
+  // Register an allocation ID for the global variable
+  Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(GV->getContext()), AllocID);
+  AllocID = AllocID + 1;
+ 
+  RegisterVariableIntoPool(PH, GV, AllocSize, AllocType, InsertBefore);
 
   // Update statistics
   ++RegisteredGVs;
@@ -433,10 +440,13 @@ RegisterCustomizedAllocation::registerAllocationSite(CallInst * AllocSite, Alloc
                                              InsertPt);
   }
 
+  Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(Context), AllocID);
+  AllocID = AllocID + 1;
+
   //
   // Create the registration of the object in the pool.
   //
-  RegisterVariableIntoPool (PH, AllocSite, AllocSize, InsertPt);
+  RegisterVariableIntoPool (PH, AllocSite, AllocSize, AllocType, InsertPt);
 }
 
 void
@@ -589,6 +599,7 @@ RegisterVariables::init (Module & M, std::string registerName) {
   ArgTypes.push_back (PointerType::getUnqual(Int8Type));
   ArgTypes.push_back (PointerType::getUnqual(Int8Type));
   ArgTypes.push_back (IntegerType::getInt32Ty(M.getContext()));
+  ArgTypes.push_back (IntegerType::getInt32Ty(M.getContext()));
   FunctionType * PoolRegTy = FunctionType::get (VoidTy, ArgTypes, false);
 
   //
@@ -600,7 +611,7 @@ RegisterVariables::init (Module & M, std::string registerName) {
 }
 
 void
-RegisterVariables::RegisterVariableIntoPool(Value * PH, Value * val, Value * AllocSize, Instruction * InsertBefore) {
+RegisterVariables::RegisterVariableIntoPool(Value * PH, Value * val, Value * AllocSize, Value * AllocType, Instruction * InsertBefore) {
   if (!PH) {
     llvm::errs() << "pool descriptor not present for " << val->getName().str()
                  << "\n";
@@ -619,6 +630,7 @@ RegisterVariables::RegisterVariableIntoPool(Value * PH, Value * val, Value * All
   args.push_back (PHCasted);
   args.push_back (GVCasted);
   args.push_back (AllocSize);
+  args.push_back (AllocType);
   CallInst * CI = CallInst::Create(PoolRegisterFunc, args, "", InsertBefore); 
 
   //
@@ -628,6 +640,13 @@ RegisterVariables::RegisterVariableIntoPool(Value * PH, Value * val, Value * All
   if (Instruction * I = dyn_cast<Instruction>(val->stripPointerCasts()))
     if (MDNode * MD = I->getMetadata ("dbg"))
       CI->setMetadata ("dbg", MD);
+
+  llvm::errs() << "REGISTERED VARIABLE " << val->getName().str()
+               << "\n";  
+ 
+  llvm::errs() << "REGISTERED VARIABLE size " << *AllocType
+               << "\n"; 
+    
   return;
 }
 
@@ -703,8 +722,10 @@ RegisterFunctionByvalArguments::runOnFunction (Function & F) {
       Value * AllocSize = ConstantInt::get
         (IntegerType::getInt32Ty(Context), TD->getTypeAllocSize(ET));
       Value * PH = ConstantPointerNull::get (getVoidPtrType(Context));
+      Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(Context), AllocID);
+      AllocID = AllocID + 1;
       Instruction * InsertBefore = &(F.getEntryBlock().front());
-      RegisterVariableIntoPool(PH, &*I, AllocSize, InsertBefore);
+      RegisterVariableIntoPool(PH, &*I, AllocSize, AllocType, InsertBefore);
       registeredArguments.push_back(std::make_pair<>(PH, &*I));
     }
   }

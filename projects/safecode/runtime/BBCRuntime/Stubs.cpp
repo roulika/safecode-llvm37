@@ -5,7 +5,7 @@
 using namespace NAMESPACE_SC;
 
 extern "C" void
-pool_register (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
+pool_register (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes, unsigned AllocType) {
   __sc_bb_src_poolregister(Pool, allocaptr, NumBytes, 0, NULL, 0);
   return;
 }
@@ -13,7 +13,8 @@ pool_register (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes) {
 extern "C" void
 pool_register_debug (DebugPoolTy *Pool,
                      void * allocaptr,
-                     unsigned int NumBytes, TAG,
+                     unsigned int NumBytes, 
+                     unsigned AllocType, TAG,
                      const char* SourceFilep,
                      unsigned int lineno) {
   __sc_bb_src_poolregister(Pool, allocaptr, NumBytes, tag, SourceFilep, lineno);
@@ -31,7 +32,8 @@ pool_register_stack_debug(DebugPoolTy *pool,
 extern "C" void
 pool_register_global (DebugPoolTy *Pool,
                       void *allocaptr,
-                      unsigned NumBytes) {
+                      unsigned NumBytes, 
+                      unsigned AllocType) {
   __sc_bb_poolregister_global(Pool, allocaptr, NumBytes);
 }
 
@@ -79,13 +81,14 @@ extern "C" void
 pool_reregister (DebugPoolTy *Pool,
                  void * newptr,
                  void * oldptr,
-                 unsigned NumBytes) {
+                 unsigned NumBytes,
+                 unsigned AllocType) {
   if (oldptr == NULL) {
     //
     // If the old pointer is NULL, then we know that this is essentially a
     // regular heap allocation; treat it as such.
     //
-    pool_register (Pool, newptr, NumBytes);
+    pool_register (Pool, newptr, NumBytes, AllocType);
   } else if (NumBytes == 0) {
     //
     // Allocating a buffer of zero bytes is essentially a deallocation of the
@@ -97,7 +100,7 @@ pool_reregister (DebugPoolTy *Pool,
     // Otherwise, this is a true reallocation.  Unregister the old memory and
     // register the new memory.
     pool_unregister (Pool, oldptr);
-    pool_register(Pool, newptr, NumBytes);
+    pool_register(Pool, newptr, NumBytes, AllocType);
   }
 
   return;
@@ -108,6 +111,7 @@ pool_reregister_debug (DebugPoolTy *Pool,
                        void * newptr,
                        void * oldptr,
                        unsigned NumBytes,
+                       unsigned AllocType,
                        TAG,
                        const char * SourceFilep,
                        unsigned lineno) {
@@ -116,7 +120,7 @@ pool_reregister_debug (DebugPoolTy *Pool,
     // If the old pointer is NULL, then we know that this is essentially a
     // regular heap allocation; treat it as such.
     //
-    pool_register_debug (Pool, newptr, NumBytes, tag, SourceFilep, lineno);
+    pool_register_debug (Pool, newptr, NumBytes, AllocType, tag, SourceFilep, lineno);
   } else if (NumBytes == 0) {
     //
     // Allocating a buffer of zero bytes is essentially a deallocation of the
@@ -128,7 +132,7 @@ pool_reregister_debug (DebugPoolTy *Pool,
     // Otherwise, this is a true reallocation.  Unregister the old memory and
     // register the new memory.
     pool_unregister_debug (Pool, oldptr, tag, SourceFilep, lineno);
-    pool_register_debug   (Pool, newptr, NumBytes, tag, SourceFilep, lineno);
+    pool_register_debug   (Pool, newptr, NumBytes, AllocType, tag, SourceFilep, lineno);
   }
 
   return;
