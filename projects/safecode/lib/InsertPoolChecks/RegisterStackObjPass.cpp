@@ -23,6 +23,8 @@
 #include "safecode/Utility.h"
 #include "safecode/RegisterBounds.h"
 
+extern unsigned AllocID;
+
 namespace llvm {
 
 char RegisterStackObjPass::ID = 0;
@@ -430,13 +432,24 @@ RegisterStackObjPass::registerAllocaInst (AllocaInst *AI) {
   PointerType * VoidPtrTy = getVoidPtrType(AI->getContext());
   Instruction *Casted = castTo (AI, VoidPtrTy, AI->getName()+".casted", iptI);
   Value * CastedPH    = ConstantPointerNull::get (VoidPtrTy);
+
+  // Record an allocation ID for a stack allocation  
+  Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(AI->getContext()), AllocID);
+  AllocID = AllocID + 1;
+
   std::vector<Value *> args;
   args.push_back (CastedPH);
   args.push_back (Casted);
   args.push_back (AllocSize);
+  args.push_back (AllocType);
+
 
   // Update statistics
   ++StackRegisters;
+  
+  llvm::errs() << "REGISTERED STACK VAR, ID: " << *AllocType
+               << "\n"; 
+
   return CallInst::Create (PoolRegister, args, "", iptI);
 }
 

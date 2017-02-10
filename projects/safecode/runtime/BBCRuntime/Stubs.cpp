@@ -23,7 +23,8 @@ pool_register_debug (DebugPoolTy *Pool,
 extern "C" void
 pool_register_stack_debug(DebugPoolTy *pool,
                           void * allocaptr,
-                          unsigned NumBytes, TAG,
+                          unsigned NumBytes, 
+                          unsigned AllocType, TAG,
                           const char* SourceFilep,
                           unsigned lineno) {
   __sc_bb_src_poolregister_stack(pool, allocaptr, NumBytes, tag, SourceFilep, lineno);

@@ -705,7 +705,7 @@ pool_register_stack_debug (DebugPoolTy *Pool,
                            const char * SourceFilep,
                            unsigned lineno) {
   
-  printf("Printing from pool_register_stack_debug\n");
+  printf("Printing from pool_register_stack_debug %d %d \n", AllocType, NumBytes);
   fflush(stdout);
   //
   // Use the common registration function.  Mark the allocation as a stack
@@ -747,6 +747,8 @@ pool_register_stack_debug (DebugPoolTy *Pool,
 void
 pool_register_stack (DebugPoolTy *Pool, void * allocaptr, unsigned NumBytes, unsigned AllocType) {
   //
+  printf("Printing from pool_register_stack\n");
+  fflush(stdout);
   // Use the common registration function.  Mark the allocation as a stack
   // allocation.
   //
