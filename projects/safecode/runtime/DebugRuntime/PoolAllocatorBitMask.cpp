@@ -631,6 +631,8 @@ pool_reregister (DebugPoolTy *Pool,
                  void * oldptr,
                  unsigned NumBytes,
                  unsigned AllocType) {
+  printf("Printing from pool_reregister %d %d\n", AllocType, NumBytes);
+  fflush(stdout);
   if (oldptr == NULL) {
     //
     // If the old pointer is NULL, then we know that this is essentially a
@@ -663,6 +665,8 @@ pool_reregister_debug (DebugPoolTy *Pool,
                        TAG,
                        const char * SourceFilep,
                        unsigned lineno) {
+  printf("Printing from pool_reregister_debug %d %d\n", AllocType, NumBytes);
+  fflush(stdout);
   if (oldptr == NULL) {
     //
     // If the old pointer is NULL, then we know that this is essentially a

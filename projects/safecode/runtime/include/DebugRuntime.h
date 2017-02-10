@@ -130,8 +130,8 @@ extern "C" {
   void pool_register_global (PPOOL, void * p, unsigned size, unsigned type);
   void pool_register_global_debug(PPOOL, void * p, unsigned size, TAG, SRC_INFO);
 
-  void pool_reregister (PPOOL, void * p, void * q, unsigned size);
-  void pool_reregister_debug (PPOOL, void * p, void * q, unsigned size, TAG, SRC_INFO);
+  void pool_reregister (PPOOL, void * p, void * q, unsigned size, unsigned type);
+  void pool_reregister_debug (PPOOL, void * p, void * q, unsigned size, unsigned type, TAG, SRC_INFO);
 
   void pool_unregister(PPOOL, void *allocaptr);
   void pool_unregister_debug(PPOOL, void *allocaptr, TAG, SRC_INFO);

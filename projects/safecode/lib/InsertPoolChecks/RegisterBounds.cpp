@@ -162,7 +162,7 @@ RegisterGlobalVariables<T>::registerGV(GlobalVariable * GV,
   }
   Value * AllocSize = ConstantInt::get (csiType, TypeSize);
   
-  // Register an allocation ID for the global variable
+  // Record an allocation ID for the global variable
   Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(GV->getContext()), AllocID);
   AllocID = AllocID + 1;
  
@@ -215,6 +215,7 @@ RegisterMainArgs::runOnModule(Module & M) {
                                           NULL);
   Function * RegisterArgv = dyn_cast<Function>(CF);
 
+  // Record and Allocation ID for the argc,argv
   Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(Context), AllocID);
   AllocID = AllocID + 1;
 
@@ -225,7 +226,7 @@ RegisterMainArgs::runOnModule(Module & M) {
   fargs.push_back (AllocType);
   CallInst::Create (RegisterArgv, fargs, "", InsertPt);
   
-  llvm::errs() << "REGISTERED ARGV. Type: " << *AllocType
+  llvm::errs() << "REGISTERED ARGV. ID: " << *AllocType
                << "\n"; 
 
   return true;
@@ -393,6 +394,7 @@ RegisterCustomizedAllocation::runOnModule(Module & M) {
                                                            getVoidPtrType (M),
                                                            getVoidPtrType (M),
                                                            Int32Type,
+                                                           IntegerType::getInt32Ty(M.getContext()),
                                                            NULL);
 
   Constant * CF = M.getOrInsertFunction ("pool_unregister",
@@ -452,7 +454,8 @@ RegisterCustomizedAllocation::registerAllocationSite(CallInst * AllocSite, Alloc
                                              AllocSize->getName(),
                                              InsertPt);
   }
-
+  
+  //Record and Allocation ID for the allocation site
   Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(Context), AllocID);
   AllocID = AllocID + 1;
 
@@ -500,6 +503,10 @@ RegisterCustomizedAllocation::registerReallocationSite(CallInst * AllocSite, ReA
                            getVoidPtrType(PH->getContext()),
                            AllocSite->getName(),
                            InsertPt);
+  // Record an allocation ID for the reallocation site
+  Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(AllocSite->getContext()), AllocID);
+  AllocID = AllocID + 1;
+
 
   //
   // Create the call to reregister the allocation.
@@ -509,6 +516,7 @@ RegisterCustomizedAllocation::registerReallocationSite(CallInst * AllocSite, ReA
   args.push_back (NewPtr);
   args.push_back (OldPtr);
   args.push_back (AllocSize);
+  args.push_back (AllocType);
   CallInst * CI = CallInst::Create(PoolReregisterFunc, args, "", InsertPt); 
 
   //
@@ -517,6 +525,10 @@ RegisterCustomizedAllocation::registerReallocationSite(CallInst * AllocSite, ReA
   //
   if (MDNode * MD = AllocSite->getMetadata ("dbg"))
     CI->setMetadata ("dbg", MD);
+
+  llvm::errs() << "REGISTERED REALLOCATIONSITE, ID: " << *AllocType
+               << "\n"; 
+
 
   return;
 }
@@ -654,10 +666,10 @@ RegisterVariables::RegisterVariableIntoPool(Value * PH, Value * val, Value * All
     if (MDNode * MD = I->getMetadata ("dbg"))
       CI->setMetadata ("dbg", MD);
 
-  llvm::errs() << "REGISTERED VARIABLE " << val->getName().str()
+  llvm::errs() << "REGISTERED GV " << val->getName().str()
                << "\n";  
  
-  llvm::errs() << "REGISTERED VARIABLE size " << *AllocType
+  llvm::errs() << "REGISTERED ID " << *AllocType
                << "\n"; 
     
   return;
