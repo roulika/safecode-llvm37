@@ -142,6 +142,6 @@ extern "C" void* __sc_fsparameter(void *pool, void *ptr, void *dest, unsigned ch
   return dest;
 }
 
-extern "C" void poolargvregister(int argc, char ** argv) {
+extern "C" void poolargvregister(int argc, char ** argv, unsigned AllocType) {
   __sc_bb_poolargvregister(argc, argv);
 }

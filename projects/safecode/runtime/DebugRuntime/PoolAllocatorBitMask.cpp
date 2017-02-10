@@ -329,7 +329,10 @@ extern char ** environ;
 //  Register all of the argv strings in the external object pool.
 //
 void *
-poolargvregister (int argc, char ** argv) {
+poolargvregister (int argc, char ** argv, unsigned AllocType) {
+  printf("Printing from poolargv %d\n", AllocType);
+  fflush(stdout);  
+  
   if (logregs) {
     fprintf (stderr, "poolargvregister: %p - %p\n", (void *) argv,
              (void *) (((unsigned char *)(&(argv[argc+1]))) - 1));
@@ -342,7 +345,7 @@ poolargvregister (int argc, char ** argv) {
                (unsigned)strlen(argv[index]), argv[index]);
       fflush (stderr);
     }
-    ExternalObjects->insert(argv[index], argv[index] + strlen (argv[index]));
+    ExternalObjects->insert(argv[index], argv[index] + strlen (argv[index]), AllocType);
   }
 
   //
@@ -352,7 +355,7 @@ poolargvregister (int argc, char ** argv) {
   //
   // Note that the argv array is supposed to end with a NULL pointer element.
   //
-  ExternalObjects->insert(argv, ((unsigned char *)(&(argv[argc+1]))) - 1);
+  ExternalObjects->insert(argv, ((unsigned char *)(&(argv[argc+1]))) - 1, AllocType);
 
   //
   // Register the environment strings and the array that points to them.
@@ -365,15 +368,15 @@ poolargvregister (int argc, char ** argv) {
                (unsigned)strlen(envstr), envstr);
       fflush (stderr);
     }
-    ExternalObjects->insert(envstr, envstr + strlen (envstr));
+    ExternalObjects->insert(envstr, envstr + strlen (envstr), AllocType);
   }
-  ExternalObjects->insert(environ, ((unsigned char *)(environ + numEnvs)) - 1);
+  ExternalObjects->insert(environ, ((unsigned char *)(environ + numEnvs)) - 1, AllocType);
 
   //
   // Register errno for kicks and giggles.
   //
   unsigned char * errnoAdd = (unsigned char *) &errno;
-  ExternalObjects->insert(errnoAdd, errnoAdd + sizeof (errno) - 1);
+  ExternalObjects->insert(errnoAdd, errnoAdd + sizeof (errno) - 1, AllocType);
 
   return argv;
 }

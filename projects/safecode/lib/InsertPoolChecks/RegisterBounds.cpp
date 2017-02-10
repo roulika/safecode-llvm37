@@ -180,6 +180,9 @@ RegisterMainArgs::runOnModule(Module & M) {
     return false;
   }
 
+  LLVMContext &Context = M.getContext();
+
+
   //
   // If there are no argc and argv arguments, don't register them.
   //
@@ -208,13 +211,23 @@ RegisterMainArgs::runOnModule(Module & M) {
                                           getVoidPtrType(M.getContext()),
                                           Int32Type,
                                           PointerType::getUnqual (VoidPtrType),
+                                          IntegerType::getInt32Ty(M.getContext()),
                                           NULL);
   Function * RegisterArgv = dyn_cast<Function>(CF);
+
+  Value * AllocType = ConstantInt::get(IntegerType::getInt32Ty(Context), AllocID);
+  AllocID = AllocID + 1;
+
 
   std::vector<Value *> fargs;
   fargs.push_back (Argc);
   fargs.push_back (Argv);
+  fargs.push_back (AllocType);
   CallInst::Create (RegisterArgv, fargs, "", InsertPt);
+  
+  llvm::errs() << "REGISTERED ARGV. Type: " << *AllocType
+               << "\n"; 
+
   return true;
 }
 

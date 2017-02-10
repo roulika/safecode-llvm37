@@ -121,7 +121,7 @@ extern "C" {
   void * __sc_dbg_poolalloc(PPOOL, unsigned NumBytes);
   void * __sc_dbg_src_poolalloc (PPOOL, unsigned Size, TAG, SRC_INFO);
 
-  void * poolargvregister (int argc, char ** argv);
+  void * poolargvregister (int argc, char ** argv, unsigned type);
 
   void pool_register       (PPOOL, void *allocaptr, unsigned NumBytes, unsigned AllocType);
   void pool_register_debug (PPOOL, void * p, unsigned size, unsigned type, TAG, SRC_INFO);
