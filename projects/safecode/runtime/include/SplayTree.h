@@ -13,6 +13,9 @@
 
 #include <memory>
 #include <vector>
+#include <iostream>
+#include <tuple>
+#include <set>
 
 #ifndef SUPPORT_SPLAYTREE_H
 #define SUPPORT_SPLAYTREE_H
@@ -29,6 +32,7 @@ struct range_tree_node {
   void* end;
   unsigned type;
   dataTy data;
+  std::set<std::tuple<void *, const char*>> access_list;
 };
 
 template<>
@@ -42,6 +46,7 @@ struct range_tree_node <void>{
   void* start;
   void* end;
   unsigned type;
+  std::set<std::tuple<int, int, int, void *, char *>> access_list;
 };
 
 template<typename T, class _Alloc>
@@ -330,6 +335,19 @@ class RangeSplaySet
     if (!t) return false;
     return true;
   }
+
+  bool record_access(void *key, std::tuple<void *, const char *> access){
+    range_tree_node<void>* t = Tree.__find(key);
+    if (!t) return false;
+
+     // std::string *pstr = static_cast<std::string *>(std::get<0>(access));
+     // printf("ModuleID: %s \n\n", pstr);
+      //std::cout << "access contains: " << *pstr;
+     // std::cout << " and " << std::get<1>(access);
+     // std::cout << std::endl;   
+    return true;
+  }
+
 };
 
 template<typename T, class Allocator = std::allocator<T> >

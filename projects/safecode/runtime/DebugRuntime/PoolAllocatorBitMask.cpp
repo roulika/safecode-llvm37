@@ -2160,9 +2160,9 @@ nullstrlen (const char * s) {
 //  
 //
 void
-trace_load(DebugPoolTy *Pool, void *Node, void *ModName) {
+trace_load(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
 
-  printf("Printing from trace_load %p %p\n", Pool, Node);
+  printf("In trace_load! Node: %p %d\n", Node, Perm);
   fflush(stdout);
 
   RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);
@@ -2173,6 +2173,16 @@ trace_load(DebugPoolTy *Pool, void *Node, void *ModName) {
   if(fs){
     std::string *pstr = static_cast<std::string *>(ModName);
     printf("True! %d %p %s \n", type, start, pstr);
+    auto access = std::make_tuple(ModName, "R");
+    bool ra = SPTree->record_access(Node, access);
+    if(ra){
+      printf("LOL\n");
+     // auto access = std::make_tuple(ModName, "R");
+     // std::cout << "access contains: " << std::get<0>(access);
+     // std::cout << " and " << std::get<1>(access);
+     // std::cout << std::endl;
+
+    }
   }
 
   return;
@@ -2185,9 +2195,9 @@ trace_load(DebugPoolTy *Pool, void *Node, void *ModName) {
 //  
 //
 void
-trace_store(DebugPoolTy *Pool, void *Node, void *ModName) {
+trace_store(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
 
-  printf("Printing from trace_store %p %p\n", Pool, Node);
+  printf("In trace_store! Node: %p %d\n", Node, Perm);
   fflush(stdout);
 
   RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);

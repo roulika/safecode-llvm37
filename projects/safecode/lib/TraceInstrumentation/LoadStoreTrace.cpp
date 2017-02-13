@@ -53,6 +53,7 @@ LoadStoreTrace::runOnModule (Module &M) {
   ArgTypes.push_back(getVoidPtrType(M.getContext()));
   ArgTypes.push_back(getVoidPtrType(M.getContext()));
   ArgTypes.push_back(getVoidPtrType(M.getContext()));
+  ArgTypes.push_back(IntegerType::getInt32Ty(M.getContext()));
   
 
   //Function Type
@@ -63,7 +64,7 @@ LoadStoreTrace::runOnModule (Module &M) {
 
   TraceStoreFunc = dyn_cast<Function>(M.getOrInsertFunction("trace_store", TraceTy));
  
-  // The third argument of the functios is a string. 
+  // The third argument of the function is a string. 
   // Therefore, we create a global variable containing the Module Identifier.
   Constant *ModIDInit = ConstantDataArray::getString (M.getContext(), ModuleID);
   ModID = new GlobalVariable (M, ModIDInit->getType(),
@@ -98,7 +99,7 @@ void LoadStoreTrace::visitLoadInst(LoadInst &LI) {
   args.push_back(ConstantPointerNull::get(getVoidPtrType(Context)));
   args.push_back(castTo(LI.getPointerOperand(), getVoidPtrType(Context), &LI));
   args.push_back(castTo(ModID,getVoidPtrType(Context), "ModID", &LI));  
-
+  args.push_back(ConstantInt::get(IntegerType::getInt32Ty(Context), 82));
 
   // Create a call to trace_load.
   CallInst *CI = CallInst::Create(TraceLoadFunc, args, "", &LI); 
@@ -126,6 +127,7 @@ void LoadStoreTrace::visitStoreInst(StoreInst &SI) {
   args.push_back(ConstantPointerNull::get(getVoidPtrType(Context)));
   args.push_back(castTo(SI.getPointerOperand(), getVoidPtrType(Context), &SI));
   args.push_back(castTo(ModID,getVoidPtrType(Context), "ModID", &SI));
+  args.push_back(ConstantInt::get(IntegerType::getInt32Ty(Context), 87));
 
   // Create a call to trace_store.
   CallInst *CI = CallInst::Create(TraceStoreFunc, args, "", &SI); 
