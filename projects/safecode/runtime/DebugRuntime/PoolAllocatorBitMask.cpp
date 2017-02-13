@@ -2151,3 +2151,32 @@ nullstrlen (const char * s) {
   return 0;
 }
 
+
+
+//---------------------- My Runtime Library ---------------------------//
+//
+// Function: trace_load
+// Description:
+//  
+//
+void
+trace_load(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
+
+  printf("Printing from trace_load %p %p %d\n", Pool, Node, AllocType);
+  fflush(stdout);
+
+}
+
+
+//
+// Function: trace_store
+// Description:
+//  
+//
+void
+trace_store(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
+
+  printf("Printing from trace_store %p %p %d\n", Pool, Node, AllocType);
+  fflush(stdout);
+
+} 

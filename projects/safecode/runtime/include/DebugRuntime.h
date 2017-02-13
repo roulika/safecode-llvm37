@@ -193,6 +193,12 @@ extern "C" {
   void poolcheck_freeui (PPOOL, void * ptr);
   void poolcheck_free_debug   (PPOOL, void * ptr, TAG, SRC_INFO);
   void poolcheck_freeui_debug (PPOOL, void * ptr, TAG, SRC_INFO);
+
+
+  // ---------------------- My functions --------------
+  void trace_load (PPOOL, void *node, unsigned type);
+  void trace_store (PPOOL, void *node, unsigned type);
+
 }
 
 #undef PPOOL
