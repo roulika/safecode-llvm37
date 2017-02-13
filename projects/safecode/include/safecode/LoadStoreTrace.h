@@ -1,9 +1,9 @@
-//===- LoadStoreChecks.h  -------//
+//====================- LoadStoreTrace.h===============---------------- --//
 // 
-//                     The LLVM Compiler Infrastructure
+//       The University of Rochester Security Research Group
 //
-// This file was developed by the LLVM research group and is distributed under
-// the University of Illinois Open Source License. See LICENSE.TXT for details.
+// This file was developed by the University of Rochester security research
+// group.
 // 
 //===----------------------------------------------------------------------===//
 //
@@ -11,8 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef _SAFECODE_LOADSTORECHECKS_H_
-#define _SAFECODE_LOADSTORECHECKS_H_
+#ifndef _SAFECODE_LOADSTORETRACE_H_
+#define _SAFECODE_LOADSTORETRACE_H_
 
 #include "llvm/Analysis/CallGraph.h"
 #include "llvm/Pass.h"
@@ -27,12 +27,12 @@ namespace llvm {
 // Description:
 //  
 //
-struct LoadStoreChecks : public ModulePass, InstVisitor<LoadStoreChecks> {
+struct LoadStoreTrace : public ModulePass, InstVisitor<LoadStoreTrace> {
   public:
     static char ID;
-    LoadStoreChecks () : ModulePass (ID) { }
+    LoadStoreTrace ()  : ModulePass (ID) { }
     const char *getPassName() const {
-      return "Insert Load-Store Checks";
+        return "Insert Load-Store Trace Function Calls";
     }
     virtual bool runOnModule(Module &M);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
@@ -51,9 +51,7 @@ struct LoadStoreChecks : public ModulePass, InstVisitor<LoadStoreChecks> {
     Function *TraceLoadFunc;
     Function *TraceStoreFunc;
 
-    std::string ModuleID;
-    Constant *ModNameInit;
-    Value *ModName;
+    Value *ModID;
 
 };
 
