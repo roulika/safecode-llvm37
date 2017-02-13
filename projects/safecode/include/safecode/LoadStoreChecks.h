@@ -27,14 +27,14 @@ namespace llvm {
 // Description:
 //  
 //
-struct LoadStoreChecks : public FunctionPass, InstVisitor<LoadStoreChecks> {
+struct LoadStoreChecks : public ModulePass, InstVisitor<LoadStoreChecks> {
   public:
     static char ID;
-    LoadStoreChecks () : FunctionPass (ID) { }
+    LoadStoreChecks () : ModulePass (ID) { }
     const char *getPassName() const {
       return "Insert Load-Store Checks";
     }
-    virtual bool runOnFunction(Function &F);
+    virtual bool runOnModule(Module &M);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       // Required passes
       //AU.addRequired<CallGraph>();
@@ -50,6 +50,10 @@ struct LoadStoreChecks : public FunctionPass, InstVisitor<LoadStoreChecks> {
 
     Function *TraceLoadFunc;
     Function *TraceStoreFunc;
+
+    std::string ModuleID;
+    Constant *ModNameInit;
+    Value *ModName;
 
 };
 

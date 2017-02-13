@@ -2160,9 +2160,9 @@ nullstrlen (const char * s) {
 //  
 //
 void
-trace_load(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
+trace_load(DebugPoolTy *Pool, void *Node, void *ModName) {
 
-  printf("Printing from trace_load %p %p %d\n", Pool, Node, AllocType);
+  printf("Printing from trace_load %p %p\n", Pool, Node);
   fflush(stdout);
 
   RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);
@@ -2171,7 +2171,8 @@ trace_load(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
   unsigned type;
   bool fs = SPTree->find (Node, start, end, type);
   if(fs){
-    printf("True! %d %p \n", type, start);
+    std::string *pstr = static_cast<std::string *>(ModName);
+    printf("True! %d %p %s \n", type, start, pstr);
   }
 
   return;
@@ -2184,9 +2185,9 @@ trace_load(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
 //  
 //
 void
-trace_store(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
+trace_store(DebugPoolTy *Pool, void *Node, void *ModName) {
 
-  printf("Printing from trace_store %p %p %d\n", Pool, Node, AllocType);
+  printf("Printing from trace_store %p %p\n", Pool, Node);
   fflush(stdout);
 
   RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);

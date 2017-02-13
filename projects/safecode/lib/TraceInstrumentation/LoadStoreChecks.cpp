@@ -18,6 +18,10 @@
 #include "safecode/LoadStoreChecks.h"
 #include "safecode/Utility.h"
 
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/Module.h"
+
 #define DEBUG_TYPE "safecode"
 
 
@@ -34,32 +38,45 @@ namespace {
 }
 
 bool
-LoadStoreChecks::runOnFunction (Function &F) {
+LoadStoreChecks::runOnModule (Module &M) {
   llvm::errs() << "FROM NEW PASS\n";
 
   // Create prototypes for the functions
-  Module *M = F.getParent();
+  // Module *M = F.getParent();
+
+  ModuleID = M.getModuleIdentifier();
+  llvm::errs() << "ModuleID: " << ModuleID << "\n";
+
   // Return type for the functions
-  Type *VoidTy = Type::getVoidTy(M->getContext());
+  Type *VoidTy = Type::getVoidTy(M.getContext());
  
   // Types of the arguments for the functions
   std::vector<Type *> ArgTypes;
-  ArgTypes.push_back(getVoidPtrType(M->getContext()));
-  ArgTypes.push_back(getVoidPtrType(M->getContext()));
-  ArgTypes.push_back(IntegerType::getInt32Ty(M->getContext()));
+  ArgTypes.push_back(getVoidPtrType(M.getContext()));
+  ArgTypes.push_back(getVoidPtrType(M.getContext()));
+  ArgTypes.push_back(getVoidPtrType(M.getContext()));
   
 
   //Function prototype
   FunctionType *TraceTy = FunctionType::get(VoidTy, ArgTypes, false);
 
   // Create the functions.
-  TraceLoadFunc = dyn_cast<Function>(M->getOrInsertFunction ("trace_load",
+  TraceLoadFunc = dyn_cast<Function>(M.getOrInsertFunction ("trace_load",
                                                                TraceTy));
 
-  TraceStoreFunc = dyn_cast<Function>(M->getOrInsertFunction ("trace_store",
+  TraceStoreFunc = dyn_cast<Function>(M.getOrInsertFunction ("trace_store",
                                                                 TraceTy));
  
-  visit(F);
+  ModNameInit = ConstantDataArray::getString (M.getContext(), ModuleID);
+
+  ModName = new GlobalVariable (M, ModNameInit->getType(),
+                                        true,
+                                        GlobalValue::InternalLinkage,
+                                        ModNameInit,
+                                        "modname");
+
+
+  visit(M);
  
 
 
@@ -69,7 +86,7 @@ LoadStoreChecks::runOnFunction (Function &F) {
 
 void LoadStoreChecks::visitLoadInst(LoadInst &LI) {
   // Instrument a load instruction with a load check.
-  llvm::errs() << "LOAD\n";
+ // llvm::errs() << "LOAD\n";
  
   //
   // Create a list with the arguments of the trace_load function.
@@ -80,13 +97,14 @@ void LoadStoreChecks::visitLoadInst(LoadInst &LI) {
   std::vector<Value *> args;
   LLVMContext &Context = LI.getContext();
 
+  LI.dump();
 
-  //This will be replaced with the module id.
-  Value *ModuleID = ConstantInt::get(IntegerType::getInt32Ty(Context), 0); 
+  //llvm::errs() << *ModName << "\n";
+
   
   args.push_back(ConstantPointerNull::get(getVoidPtrType(Context)));
-  args.push_back(castTo (LI.getPointerOperand(), getVoidPtrType(Context), &LI));
-  args.push_back (ModuleID);
+  args.push_back(castTo(LI.getPointerOperand(), getVoidPtrType(Context), &LI));
+  args.push_back(castTo(ModName,getVoidPtrType(Context), "modname", &LI));
   
   CallInst *CI = CallInst::Create(TraceLoadFunc, args, "", &LI); 
 
@@ -95,7 +113,7 @@ void LoadStoreChecks::visitLoadInst(LoadInst &LI) {
 
 void LoadStoreChecks::visitStoreInst(StoreInst &SI) {
   // Instrument a store instruction with a store check.
-  llvm::errs() << "STORE\n";
+  //llvm::errs() << "STORE\n";
 
   //
   // Create a list with the arguments of the trace_store function.
@@ -106,14 +124,11 @@ void LoadStoreChecks::visitStoreInst(StoreInst &SI) {
   std::vector<Value *> args;
   LLVMContext &Context = SI.getContext();
 
-
-  //This will be replaced with the module id.
-  Value *ModuleID = ConstantInt::get(IntegerType::getInt32Ty(Context), 0); 
   
   args.push_back(ConstantPointerNull::get(getVoidPtrType(Context)));
   args.push_back(castTo(SI.getPointerOperand(), getVoidPtrType(Context), &SI));
-  args.push_back (ModuleID);
-  
+  args.push_back(castTo(ModName,getVoidPtrType(Context), "modname", &SI));
+
   CallInst *CI = CallInst::Create(TraceStoreFunc, args, "", &SI); 
 
   return;
