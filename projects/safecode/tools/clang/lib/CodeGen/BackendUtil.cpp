@@ -61,6 +61,7 @@
 #include "safecode/SAFECodeMSCInfo.h"
 #include "safecode/SAFECodePasses.h"
 #include "safecode/SpecializeCMSCalls.h"
+#include "safecode/LoadStoreChecks.h"
 #include "safecode/PromoteArrayAllocas.h"
 #include "safecode/RewriteHeapAllocations.h"
 #include "safecode/InlineBBACRuntimeFunctions.h"
@@ -520,6 +521,7 @@ void EmitAssemblyHelper::CreatePasses() {
     if (CodeGenOpts.MemSafeTerminate) {
       MPM->add (llvm::createSCTerminatePass ());
     }
+    MPM->add (new LoadStoreChecks());
   }
 
   if (CodeGenOpts.BaggyBounds) {

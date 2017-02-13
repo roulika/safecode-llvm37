@@ -14,5 +14,5 @@ endif
 
 include $(LEVEL)/projects/safecode/Makefile.common
 
-ObjectsO := $(LibDir)/addchecks.o $(LibDir)/arrayboundcheck.o $(LibDir)/indirectcalls.o $(LibDir)/speculativechecking.o $(LibDir)/convert.o $(LibDir)/pointerchecks.o $(LibDir)/stackcheck.o $(LibDir)/cmspasses.o 
-ObjectsLO := $(LibDir)/addchecks.o $(LibDir)/arrayboundcheck.o $(LibDir)/indirectcalls.o $(LibDir)/speculativechecking.o $(LibDir)/convert.o $(LibDir)/pointerchecks.o $(LibDir)/stackcheck.o $(LibDir)/cmspasses.o 
+ObjectsO := $(LibDir)/addchecks.o $(LibDir)/arrayboundcheck.o $(LibDir)/indirectcalls.o $(LibDir)/speculativechecking.o $(LibDir)/convert.o $(LibDir)/pointerchecks.o $(LibDir)/stackcheck.o $(LibDir)/cmspasses.o $(LibDir)/traceinstrumentation.o
+ObjectsLO := $(LibDir)/addchecks.o $(LibDir)/arrayboundcheck.o $(LibDir)/indirectcalls.o $(LibDir)/speculativechecking.o $(LibDir)/convert.o $(LibDir)/pointerchecks.o $(LibDir)/stackcheck.o $(LibDir)/cmspasses.o $(LibDir)/traceinstrumentation.o

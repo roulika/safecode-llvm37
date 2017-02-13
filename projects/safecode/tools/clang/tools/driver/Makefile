@@ -51,7 +51,7 @@ USEDLIBS += clangAnalysis.a clangEdit.a clangAST.a clangLex.a clangBasic.a
 
 USEDLIBS += abc.a addchecks.a sc-support.a baggyboundscheck.a debuginstr.a \
             softbound.a formatstrings.a convert.a cstdlib.a optchecks.a oob.a \
-            cmspasses.a
+            cmspasses.a traceinstrumentation.a
 
 include $(CLANG_LEVEL)/Makefile
 
