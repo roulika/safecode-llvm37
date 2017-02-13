@@ -50,7 +50,6 @@ struct LoadStoreChecks : public FunctionPass, InstVisitor<LoadStoreChecks> {
 
     Function *TraceLoadFunc;
     Function *TraceStoreFunc;
-    std::vector<Value *> args;
 
 };
 
