@@ -27,14 +27,14 @@ namespace llvm {
 // Description:
 //  
 //
-struct LoadStoreChecks : public ModulePass, InstVisitor<LoadStoreChecks> {
+struct LoadStoreChecks : public FunctionPass, InstVisitor<LoadStoreChecks> {
   public:
     static char ID;
-    LoadStoreChecks () : ModulePass (ID) { }
+    LoadStoreChecks () : FunctionPass (ID) { }
     const char *getPassName() const {
       return "Insert Load-Store Checks";
     }
-    virtual bool runOnModule(Module & M);
+    virtual bool runOnFunction(Function &F);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
       // Required passes
       //AU.addRequired<CallGraph>();
@@ -45,14 +45,13 @@ struct LoadStoreChecks : public ModulePass, InstVisitor<LoadStoreChecks> {
     };
 
     // Visitor methods
-  //  void visitCallInst  (CallInst  & CI);
+    void visitLoadInst(LoadInst &LI);
+    void visitStoreInst(StoreInst &SI);
 
- // protected:
-    // Pointer to load/store run-time check function
- //   Function * FunctionCheckUI;
+    Function *TraceLoadFunc;
+    Function *TraceStoreFunc;
+    std::vector<Value *> args;
 
-    // Create a global variable table for the targets of the call instruction
- //   GlobalVariable * createTargetTable (CallInst & CI, bool & isComplete);
 };
 
 }
