@@ -2165,6 +2165,16 @@ trace_load(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
   printf("Printing from trace_load %p %p %d\n", Pool, Node, AllocType);
   fflush(stdout);
 
+  RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);
+  void * start;
+  void * end;
+  unsigned type;
+  bool fs = SPTree->find (Node, start, end, type);
+  if(fs){
+    printf("True! %d %p \n", type, start);
+  }
+
+  return;
 }
 
 
@@ -2179,4 +2189,15 @@ trace_store(DebugPoolTy *Pool, void *Node, unsigned AllocType) {
   printf("Printing from trace_store %p %p %d\n", Pool, Node, AllocType);
   fflush(stdout);
 
+  RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);
+  void * start;
+  void * end;
+  unsigned type;
+  bool fs = SPTree->find (Node, start, end, type);
+  if(fs){
+    printf("True! %d %p \n", type, start);
+  }
+
+
+  return;
 } 
