@@ -2172,16 +2172,11 @@ trace_load(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
   bool fs = SPTree->find (Node, start, end, type);
   if(fs){
     std::string *pstr = static_cast<std::string *>(ModName);
-    printf("True! %d %p %s \n", type, start, pstr);
-    auto access = std::make_tuple(ModName, "R");
+    printf("Object Found! Type: %d Start: %p ModuleID: %s \n\n", type, start, pstr);
+    auto access = std::make_tuple(ModName, Perm);
     bool ra = SPTree->record_access(Node, access);
     if(ra){
       printf("LOL\n");
-     // auto access = std::make_tuple(ModName, "R");
-     // std::cout << "access contains: " << std::get<0>(access);
-     // std::cout << " and " << std::get<1>(access);
-     // std::cout << std::endl;
-
     }
   }
 
@@ -2206,7 +2201,13 @@ trace_store(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
   unsigned type;
   bool fs = SPTree->find (Node, start, end, type);
   if(fs){
-    printf("True! %d %p \n", type, start);
+    std::string *pstr = static_cast<std::string *>(ModName);
+    printf("Object Found! Type: %d Start: %p ModuleID: %s \n\n", type, start, pstr);
+    auto access = std::make_tuple(ModName, Perm);
+    bool ra = SPTree->record_access(Node, access);
+    if(ra){
+      printf("LOL from store\n");
+    }
   }
 
 
