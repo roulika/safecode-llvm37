@@ -481,7 +481,7 @@ _internal_poolregister (DebugPoolTy *Pool,
         void * NewEnd = ((unsigned char *)allocaptr + NumBytes - 1);
         void * ObjStart = (allocaptr < start) ? allocaptr : start;
         void * ObjEnd = (NewEnd > end) ? NewEnd : end;
-        SPTree->insert(ObjStart, ObjEnd);
+        SPTree->insert(ObjStart, ObjEnd, type);
         break;
       }
 
