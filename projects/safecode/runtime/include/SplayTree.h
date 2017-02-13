@@ -291,7 +291,7 @@ class RangeSplaySet
   }
 
   bool insert(void* start, void* end, unsigned type) {
-    return 0 != Tree.__insert(start,end);
+    return 0 != Tree.__insert(start,end,type);
   }
 
   
