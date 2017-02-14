@@ -2173,9 +2173,12 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
   unsigned type;
   bool fs = SPTree->find (Node, start, end, type);
   if(fs){
-    auto access = std::make_tuple(ModName, Perm);
-    std::cout << "Modname " << std::get<0>(access) << " ";
-    std::cout << "Access: " << (char) std::get<1>(access) << "\n";
+    unsigned int offset = (char *)Node - (char *)start;
+    printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
+    auto access = std::make_tuple(ModName, offset, Perm);
+    std::cout << "ModName: " << std::get<0>(access) << " ";
+    std::cout << "Offset: " << std::get<1>(access) << " ";
+    std::cout << "Access: " << (char) std::get<2>(access) << "\n";
     SPTree->access_policy[type].insert(access);
   }
 
@@ -2200,11 +2203,13 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
   void * start;
   void * end;
   unsigned type;
-  bool fs = SPTree->find (Node, start, end, type);
+  bool fs = SPTree->find (Node, start, end, type);  
   if(fs){
-    auto access = std::make_tuple(ModName, Perm);
-    std::cout << "ModName: " << std::get<0>(access) << " ";
-    std::cout << "Access: " << (char) std::get<1>(access) << "\n";
+    unsigned int offset = (char *)Node - (char *)start;
+    printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
+    auto access = std::make_tuple(ModName, offset, Perm);
+    std::cout << "Offset: " << std::get<1>(access) << " ";
+    std::cout << "Access: " << (char) std::get<2>(access) << "\n";
     SPTree->access_policy[type].insert(access);
   }
 
@@ -2219,8 +2224,9 @@ void dump_trace(){
    for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
      std::cout << "Object " << it->first <<": ";
      for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
-       std::cout << "ModName: " << std::get<0>(*li) << " ";
-       std::cout << "Access: " << (char) std::get<1>(*li) << "\n" << "          ";
+     // std::cout << "ModName: " << std::get<0>(*li) << " ";
+      std::cout << "Offset: " <<  std::get<1>(*li) << " " ;
+      std::cout << "Access: " << (char) std::get<2>(*li) << "\n" << "          ";
      }
      std::cout << "\n";
    }
