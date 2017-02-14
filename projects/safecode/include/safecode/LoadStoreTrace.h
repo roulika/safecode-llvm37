@@ -47,6 +47,8 @@ struct LoadStoreTrace : public ModulePass, InstVisitor<LoadStoreTrace> {
     // Visitor methods
     void visitLoadInst(LoadInst &LI);
     void visitStoreInst(StoreInst &SI);
+    void runAtExit(Module &M);
+
 
     Function *TraceLoadFunc;
     Function *TraceStoreFunc;

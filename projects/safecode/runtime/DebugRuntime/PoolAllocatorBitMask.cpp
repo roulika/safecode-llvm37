@@ -2213,3 +2213,19 @@ trace_store(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
 
   return;
 } 
+
+void lala(){
+  printf("lala");
+}
+
+
+//
+// Function: call_atexit
+// Description:
+//  
+//
+void call_atexit(){
+  printf("AT EXIT!\n");
+  atexit(lala);
+  return;
+}

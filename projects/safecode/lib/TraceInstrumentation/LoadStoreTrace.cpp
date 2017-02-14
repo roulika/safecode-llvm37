@@ -75,6 +75,9 @@ LoadStoreTrace::runOnModule (Module &M) {
 
   // Visit all the instructions in the module.
   visit(M);
+
+ // Add call to atexit()
+ runAtExit(M);
  
 
 
@@ -140,5 +143,23 @@ void LoadStoreTrace::visitStoreInst(StoreInst &SI) {
   return;
 
 }
+
+
+
+void LoadStoreTrace::runAtExit(Module &M){
+  for (Module::iterator I = M.begin(), E = M.end(); I != E; ++I){
+    if(I->getName().equals("main")){
+      //llvm::errs() << "Function: " << I->getName() << "\n";
+      LLVMContext &Context = M.getContext();
+      Type *VoidTy = Type::getVoidTy(Context);
+      Constant *AtExitFn = M.getOrInsertFunction("call_atexit", VoidTy, (Type *)0);
+      BasicBlock *BB = &I->getEntryBlock();
+      Instruction *I = &BB->front();
+      CallInst::Create(AtExitFn, "", I);
+    }
+  }
+  return;
+}
+
 
 }

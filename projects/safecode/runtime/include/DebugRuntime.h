@@ -199,6 +199,8 @@ extern "C" {
   void trace_load (PPOOL, void *node, void *modname, unsigned int permission);
   void trace_store (PPOOL, void *node, void *modname, unsigned int permission);
 
+  void call_atexit();
+
 }
 
 #undef PPOOL
