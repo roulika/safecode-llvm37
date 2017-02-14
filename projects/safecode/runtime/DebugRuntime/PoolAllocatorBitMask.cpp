@@ -2175,11 +2175,11 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
     printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
-    auto access = std::make_tuple(ModName, offset, Perm);
-    std::cout << "ModName: " << std::get<0>(access) << " ";
-    std::cout << "Offset: " << std::get<1>(access) << " ";
-    std::cout << "Access: " << (char) std::get<2>(access) << "\n";
-    SPTree->access_policy[type].insert(access);
+    char *ModNameDup = strdup(ModName);
+    if (ModNameDup){
+      auto access = std::make_tuple(ModNameDup, offset, Perm);
+      SPTree->access_policy[type].insert(access);
+    }
   }
 
 
@@ -2207,10 +2207,11 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
     printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
-    auto access = std::make_tuple(ModName, offset, Perm);
-    std::cout << "Offset: " << std::get<1>(access) << " ";
-    std::cout << "Access: " << (char) std::get<2>(access) << "\n";
-    SPTree->access_policy[type].insert(access);
+    char *ModNameDup = strdup(ModName);
+    if (ModNameDup){
+      auto access = std::make_tuple(ModNameDup, offset, Perm);
+      SPTree->access_policy[type].insert(access);
+    }
   }
 
 
@@ -2224,7 +2225,7 @@ void dump_trace(){
    for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
      std::cout << "Object " << it->first <<": ";
      for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
-     // std::cout << "ModName: " << std::get<0>(*li) << " ";
+      std::cout << "ModName: " << std::get<0>(*li) << " ";
       std::cout << "Offset: " <<  std::get<1>(*li) << " " ;
       std::cout << "Access: " << (char) std::get<2>(*li) << "\n" << "          ";
      }
