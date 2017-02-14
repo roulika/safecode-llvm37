@@ -47,6 +47,8 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <set>
+
 
 
 // This must be defined for Snow Leopard to get the ucontext definitions
@@ -2174,7 +2176,7 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
   bool fs = SPTree->find (Node, start, end, type);
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
-    printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
+   // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     char *ModNameDup = strdup(ModName);
     if (ModNameDup){
       auto access = std::make_tuple(ModNameDup, offset, Perm);
@@ -2206,7 +2208,7 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
   bool fs = SPTree->find (Node, start, end, type);  
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
-    printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
+   // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     char *ModNameDup = strdup(ModName);
     if (ModNameDup){
       auto access = std::make_tuple(ModNameDup, offset, Perm);
@@ -2219,12 +2221,14 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
 } 
 
 void dump_trace(){
-   printf("\n\natexit() \n\n");
+   std::cout << "\n\natexit() \n\n";
    RangeSplaySet<> *SPTree = ExternalObjects;
     
    for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
-     std::cout << "Object " << it->first <<": ";
-     for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
+      if(!it->second.empty()){
+        std::cout << "Object " << it->first <<": ";
+      }
+      for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
       std::cout << "ModName: " << std::get<0>(*li) << " ";
       std::cout << "Offset: " <<  std::get<1>(*li) << " " ;
       std::cout << "Access: " << (char) std::get<2>(*li) << "\n" << "          ";
