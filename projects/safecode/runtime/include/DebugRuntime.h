@@ -196,10 +196,10 @@ extern "C" {
 
 
   // ---------------------- My functions --------------
-  void trace_load (PPOOL, void *node, void *modname, unsigned int permission);
-  void trace_store (PPOOL, void *node, void *modname, unsigned int permission);
-
-  void call_atexit();
+  void trace_load (PPOOL, void *node, const char *modname, unsigned int permission);
+  void trace_store (PPOOL, void *node, const char *modname, unsigned int permission);
+  void dump_trace ();
+  void call_atexit ();
 
 }
 

@@ -16,6 +16,8 @@
 #include <iostream>
 #include <tuple>
 #include <set>
+#include <map>
+
 
 #ifndef SUPPORT_SPLAYTREE_H
 #define SUPPORT_SPLAYTREE_H
@@ -276,6 +278,8 @@ class RangeSplaySet
  public:
   explicit RangeSplaySet(const Allocator& A = Allocator() )
   : Tree(A) {}
+
+  std::map<unsigned int, std::set<std::tuple<const char *, unsigned int>>> access_policy;
   
   //
   // Method: insert()
@@ -296,6 +300,7 @@ class RangeSplaySet
   }
 
   bool insert(void* start, void* end, unsigned type) {
+    access_policy[type];
     return 0 != Tree.__insert(start,end,type);
   }
 

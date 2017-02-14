@@ -46,6 +46,8 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
+
 
 // This must be defined for Snow Leopard to get the ucontext definitions
 #if defined(__APPLE__)
@@ -2160,10 +2162,10 @@ nullstrlen (const char * s) {
 //  
 //
 void
-trace_load(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
+trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Perm) {
 
-  printf("In trace_load! Node: %p %d\n", Node, Perm);
-  fflush(stdout);
+  //  printf("In trace_load! Node: %p %p %d\n", Pool, Node, Perm);
+  //  fflush(stdout);
 
   RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);
   void * start;
@@ -2171,14 +2173,13 @@ trace_load(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
   unsigned type;
   bool fs = SPTree->find (Node, start, end, type);
   if(fs){
-    std::string *pstr = static_cast<std::string *>(ModName);
-    printf("Object Found! Type: %d Start: %p ModuleID: %s \n\n", type, start, pstr);
     auto access = std::make_tuple(ModName, Perm);
-    bool ra = SPTree->record_access(Node, access);
-    if(ra){
-      printf("LOL\n");
-    }
+    std::cout << "Modname " << std::get<0>(access) << " ";
+    std::cout << "Access: " << (char) std::get<1>(access) << "\n";
+    SPTree->access_policy[type].insert(access);
   }
+
+
 
   return;
 }
@@ -2190,10 +2191,10 @@ trace_load(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
 //  
 //
 void
-trace_store(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
+trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Perm) {
 
-  printf("In trace_store! Node: %p %d\n", Node, Perm);
-  fflush(stdout);
+  //  printf("In trace_store! Node: %p %p %d\n", Pool, Node, Perm);
+  //  fflush(stdout);
 
   RangeSplaySet<> *SPTree = (Pool ? &(Pool->Objects) : ExternalObjects);
   void * start;
@@ -2201,21 +2202,28 @@ trace_store(DebugPoolTy *Pool, void *Node, void *ModName, unsigned int Perm) {
   unsigned type;
   bool fs = SPTree->find (Node, start, end, type);
   if(fs){
-    std::string *pstr = static_cast<std::string *>(ModName);
-    printf("Object Found! Type: %d Start: %p ModuleID: %s \n\n", type, start, pstr);
     auto access = std::make_tuple(ModName, Perm);
-    bool ra = SPTree->record_access(Node, access);
-    if(ra){
-      printf("LOL from store\n");
-    }
+    std::cout << "ModName: " << std::get<0>(access) << " ";
+    std::cout << "Access: " << (char) std::get<1>(access) << "\n";
+    SPTree->access_policy[type].insert(access);
   }
 
 
   return;
 } 
 
-void lala(){
-  printf("lala");
+void dump_trace(){
+   printf("\n\natexit() \n\n");
+   RangeSplaySet<> *SPTree = ExternalObjects;
+    
+   for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
+     std::cout << "Object " << it->first <<": ";
+     for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
+       std::cout << "ModName: " << std::get<0>(*li) << " ";
+       std::cout << "Access: " << (char) std::get<1>(*li) << "\n" << "          ";
+     }
+     std::cout << "\n";
+   }
 }
 
 
@@ -2225,7 +2233,6 @@ void lala(){
 //  
 //
 void call_atexit(){
-  printf("AT EXIT!\n");
-  atexit(lala);
+ atexit(dump_trace);
   return;
 }
