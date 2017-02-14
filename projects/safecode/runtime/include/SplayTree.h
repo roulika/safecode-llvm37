@@ -34,7 +34,6 @@ struct range_tree_node {
   void* end;
   unsigned type;
   dataTy data;
-  std::set<std::tuple<void *, unsigned int>> access_list;
 };
 
 template<>
@@ -48,7 +47,6 @@ struct range_tree_node <void>{
   void* start;
   void* end;
   unsigned type;
-  std::set<std::tuple<void *, unsigned int>> access_list;
 };
 
 template<typename T, class _Alloc>
@@ -338,20 +336,6 @@ class RangeSplaySet
   bool find(void* key) {
     range_tree_node<void>* t = Tree.__find(key);
     if (!t) return false;
-    return true;
-  }
-
-  bool record_access(void *key, std::tuple<void *, unsigned int> access){
-    range_tree_node<void>* t = Tree.__find(key);
-    if (!t) return false;
-    t->access_list.insert(access);
-
-
-     // std::string *pstr = static_cast<std::string *>(std::get<0>(access));
-     // printf("ModuleID: %s \n\n", pstr);
-      //std::cout << "access contains: " << *pstr;
-     // std::cout << " and " << std::get<1>(access);
-     // std::cout << std::endl;   
     return true;
   }
 
