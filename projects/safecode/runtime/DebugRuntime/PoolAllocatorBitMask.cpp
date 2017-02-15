@@ -2220,6 +2220,7 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
   return;
 } 
 
+
 void dump_trace(){
   std::cout << "\n\natexit() \n\n";
 
@@ -2231,10 +2232,14 @@ void dump_trace(){
       if(!it->second.empty()){
         log << "Object_" << it->first <<"|";
       }
-      log << "ModName: " << std::get<0>(*li) << " ";
-      log << "Offset: " <<  std::get<1>(*li) << " " ;
-      log << "Size: " <<    std::get<3>(*li) << " " ;
-      log << "Access: " << (char) std::get<2>(*li) << "\n";
+     // log << "Offset " <<  std::get<1>(*li) << ":" ;
+     // log << "Size " <<    std::get<3>(*li) << ":" ;
+     // log << "ModName " << std::get<0>(*li) << ":";
+     // log << "Access " << (char) std::get<2>(*li) << "\n";
+      log << std::get<1>(*li) << ":" ;
+      log << std::get<3>(*li) << ":" ;
+      log << std::get<0>(*li) << ":";
+      log << (char) std::get<2>(*li) << "\n";
 
     }
     log << "\n";
