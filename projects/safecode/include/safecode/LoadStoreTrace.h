@@ -18,6 +18,7 @@
 #include "llvm/Pass.h"
 #include "llvm/IR/InstVisitor.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/DataLayout.h"
 
 namespace llvm {
 
@@ -36,9 +37,10 @@ struct LoadStoreTrace : public ModulePass, InstVisitor<LoadStoreTrace> {
     }
     virtual bool runOnModule(Module &M);
     virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-      // Required passes
-      //AU.addRequired<CallGraph>();
-      AU.addRequired<CallGraphWrapperPass>();
+      
+    // Required passes
+    AU.addRequired<CallGraphWrapperPass>();
+    //AU.addRequired<llvm::DataLayout>();
 
       // Preserved passes
       AU.setPreservesCFG();
@@ -54,6 +56,8 @@ struct LoadStoreTrace : public ModulePass, InstVisitor<LoadStoreTrace> {
     Function *TraceStoreFunc;
 
     Value *ModID;
+    const DataLayout *TD;
+
 
 };
 

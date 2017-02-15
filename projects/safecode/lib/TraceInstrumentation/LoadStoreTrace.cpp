@@ -54,6 +54,8 @@ LoadStoreTrace::runOnModule (Module &M) {
   ArgTypes.push_back(getVoidPtrType(M.getContext()));
   ArgTypes.push_back(getVoidPtrType(M.getContext()));
   ArgTypes.push_back(IntegerType::getInt32Ty(M.getContext()));
+  ArgTypes.push_back(IntegerType::getInt32Ty(M.getContext()));
+
   
 
   //Function Type
@@ -72,6 +74,9 @@ LoadStoreTrace::runOnModule (Module &M) {
                                         GlobalValue::InternalLinkage,
                                         ModIDInit,
                                         "ModID");
+
+  //TD = &getAnalysis<DataLayout>();
+  TD = &M.getDataLayout();
 
   // Visit all the instructions in the module.
   visit(M);
@@ -97,12 +102,24 @@ void LoadStoreTrace::visitLoadInst(LoadInst &LI) {
   std::vector<Value *> args;
   LLVMContext &Context = LI.getContext();
 
+  //
+  // Create a value representing the amount of memory, in bytes, that will be
+  // modified.
+  //
+  uint64_t TypeSize=TD->getTypeStoreSize(LI.getType());
+  IntegerType *IntType = IntegerType::getInt32Ty(Context);
+  Value *AccessSize = ConstantInt::get(IntType, TypeSize);
+
+
+
 
   
   args.push_back(ConstantPointerNull::get(getVoidPtrType(Context)));
   args.push_back(castTo(LI.getPointerOperand(), getVoidPtrType(Context), &LI));
   args.push_back(castTo(ModID,getVoidPtrType(Context), "ModID", &LI));  
   args.push_back(ConstantInt::get(IntegerType::getInt32Ty(Context), 82));
+  args.push_back(AccessSize);
+
 
   // Create a call to trace_load.
   CallInst *CI = CallInst::Create(TraceLoadFunc, args, "", &LI); 
@@ -126,11 +143,22 @@ void LoadStoreTrace::visitStoreInst(StoreInst &SI) {
   std::vector<Value *> args;
   LLVMContext &Context = SI.getContext();
 
+  //
+  // Create a value representing the amount of memory, in bytes, that will be
+  // modified.
+  //
+  uint64_t TypeSize=TD->getTypeStoreSize(SI.getOperand(0)->getType());
+  IntegerType *IntType = IntegerType::getInt32Ty(Context);
+  Value *AccessSize = ConstantInt::get(IntType, TypeSize);
+
+
   
   args.push_back(ConstantPointerNull::get(getVoidPtrType(Context)));
   args.push_back(castTo(SI.getPointerOperand(), getVoidPtrType(Context), &SI));
   args.push_back(castTo(ModID,getVoidPtrType(Context), "ModID", &SI));
   args.push_back(ConstantInt::get(IntegerType::getInt32Ty(Context), 87));
+  args.push_back(AccessSize);
+
 
   // Create a call to trace_store.
   CallInst *CI = CallInst::Create(TraceStoreFunc, args, "", &SI); 
@@ -154,12 +182,11 @@ void LoadStoreTrace::runAtExit(Module &M){
       Type *VoidTy = Type::getVoidTy(Context);
       Constant *AtExitFn = M.getOrInsertFunction("call_atexit", VoidTy, (Type *)0);
       BasicBlock *BB = &I->getEntryBlock();
-      Instruction *I = &BB->front();
+       Instruction *I = &BB->front();
       CallInst::Create(AtExitFn, "", I);
     }
   }
   return;
 }
-
 
 }

@@ -277,7 +277,7 @@ class RangeSplaySet
   explicit RangeSplaySet(const Allocator& A = Allocator() )
   : Tree(A) {}
 
-  std::map<unsigned int, std::set<std::tuple<const char *, unsigned int, unsigned int>>> access_policy;
+  std::map<unsigned int, std::set<std::tuple<const char *, unsigned int, unsigned int, size_t>>> access_policy;
   
   //
   // Method: insert()

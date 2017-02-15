@@ -2164,7 +2164,7 @@ nullstrlen (const char * s) {
 //  
 //
 void
-trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Perm) {
+trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Perm, size_t AccessSize) {
 
   //  printf("In trace_load! Node: %p %p %d\n", Pool, Node, Perm);
   //  fflush(stdout);
@@ -2179,7 +2179,7 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     char *ModNameDup = strdup(ModName);
     if (ModNameDup){
-      auto access = std::make_tuple(ModNameDup, offset, Perm);
+      auto access = std::make_tuple(ModNameDup, offset, Perm, AccessSize);
       SPTree->access_policy[type].insert(access);
     }
   }
@@ -2196,7 +2196,7 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
 //  
 //
 void
-trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Perm) {
+trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Perm, size_t AccessSize) {
 
   //  printf("In trace_store! Node: %p %p %d\n", Pool, Node, Perm);
   //  fflush(stdout);
@@ -2211,7 +2211,7 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     char *ModNameDup = strdup(ModName);
     if (ModNameDup){
-      auto access = std::make_tuple(ModNameDup, offset, Perm);
+      auto access = std::make_tuple(ModNameDup, offset, Perm, AccessSize);
       SPTree->access_policy[type].insert(access);
     }
   }
@@ -2231,6 +2231,7 @@ void dump_trace(){
       for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
       std::cout << "ModName: " << std::get<0>(*li) << " ";
       std::cout << "Offset: " <<  std::get<1>(*li) << " " ;
+      std::cout << "Size: " <<    std::get<3>(*li) << " " ;
       std::cout << "Access: " << (char) std::get<2>(*li) << "\n" << "          ";
      }
      std::cout << "\n";
