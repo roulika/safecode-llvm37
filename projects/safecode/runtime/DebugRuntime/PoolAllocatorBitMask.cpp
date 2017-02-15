@@ -2181,13 +2181,12 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
-    char *ModNameDup = strdup(ModName);
-    if (ModNameDup){
+    if (ModName){
        trace.open("trace.txt", std::ios::app | std::ios::out );
        trace << "Object_" << type <<"|";
        trace << offset << ":" ;
        trace << AccessSize << ":" ;
-       trace << ModNameDup << ":";
+       trace << ModName << ":";
        trace << (char) Perm << "\n";
        trace.close();
     }
@@ -2218,13 +2217,12 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
-    char *ModNameDup = strdup(ModName);
-    if (ModNameDup){
+    if (ModName){
       trace.open("trace.txt", std::ios::app | std::ios::out );
       trace << "Object_" << type <<"|";
       trace << offset << ":" ;
       trace << AccessSize << ":" ;
-      trace << ModNameDup << ":";
+      trace << ModName << ":";
       trace << (char) Perm << "\n";
       trace.close();
     }
