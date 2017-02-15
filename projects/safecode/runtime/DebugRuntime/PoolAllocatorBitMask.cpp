@@ -2221,23 +2221,25 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
 } 
 
 void dump_trace(){
-   std::cout << "\n\natexit() \n\n";
-   RangeSplaySet<> *SPTree = ExternalObjects;
-    
-   for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
-      if(!it->second.empty()){
-        std::cout << "Object " << it->first <<": ";
-      }
-      for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
-      std::cout << "ModName: " << std::get<0>(*li) << " ";
-      std::cout << "Offset: " <<  std::get<1>(*li) << " " ;
-      std::cout << "Size: " <<    std::get<3>(*li) << " " ;
-      std::cout << "Access: " << (char) std::get<2>(*li) << "\n" << "          ";
-     }
-     std::cout << "\n";
-   }
-}
+  std::cout << "\n\natexit() \n\n";
 
+  RangeSplaySet<> *SPTree = ExternalObjects;
+  std::ofstream log("trace.txt", std::ios_base::app | std::ios_base::out);
+     
+  for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
+    if(!it->second.empty()){
+      log << "Object " << it->first <<": ";
+    }
+    for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
+      log << "ModName: " << std::get<0>(*li) << " ";
+      log << "Offset: " <<  std::get<1>(*li) << " " ;
+      log << "Size: " <<    std::get<3>(*li) << " " ;
+      log << "Access: " << (char) std::get<2>(*li) << "\n" << "          ";
+
+    }
+    log << "\n";
+  }
+}
 
 //
 // Function: call_atexit
