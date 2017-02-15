@@ -22,6 +22,9 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
 
+#include <unistd.h>
+#include <iostream>
+
 #define DEBUG_TYPE "safecode"
 
 
@@ -40,10 +43,22 @@ namespace {
 
 bool 
 LoadStoreTrace::runOnModule (Module &M) {
+    
+  // Get the Module Path
+  char modulepath[1024];
+
+  if (getcwd(modulepath, sizeof(modulepath)) == NULL)
+      perror("getcwd() error");
+ 
+  std::string modulepathstring(modulepath);  
   
   // Get the Module Identifier.
   std::string ModuleID = M.getModuleIdentifier();
-  //llvm::errs() << "ModuleID: " << ModuleID << "\n";
+  // std::cout << ModuleID << "\n";
+  modulepathstring += "/";
+  modulepathstring += ModuleID;
+  // std::cout << cwdstring << "\n";
+
   // Create the declarations for the runtime functions.
   // Return type.
   Type *VoidTy = Type::getVoidTy(M.getContext());
@@ -68,7 +83,7 @@ LoadStoreTrace::runOnModule (Module &M) {
  
   // The third argument of the function is a string. 
   // Therefore, we create a global variable containing the Module Identifier.
-  Constant *ModIDInit = ConstantDataArray::getString (M.getContext(), ModuleID);
+  Constant *ModIDInit = ConstantDataArray::getString (M.getContext(), modulepathstring);
   ModID = new GlobalVariable (M, ModIDInit->getType(),
                                         true,
                                         GlobalValue::InternalLinkage,
