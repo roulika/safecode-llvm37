@@ -75,6 +75,10 @@
 
 #define DEBUG(x)
 
+// Log File for Dumping Trace
+std::ofstream trace;
+
+
 namespace llvm {
 
 // Dummy pool for holding global memory object information
@@ -2179,8 +2183,13 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     char *ModNameDup = strdup(ModName);
     if (ModNameDup){
-      auto access = std::make_tuple(ModNameDup, offset, Perm, AccessSize);
-      SPTree->access_policy[type].insert(access);
+       trace.open("trace.txt", std::ios::app | std::ios::out );
+       trace << "Object_" << type <<"|";
+       trace << offset << ":" ;
+       trace << AccessSize << ":" ;
+       trace << ModNameDup << ":";
+       trace << (char) Perm << "\n";
+       trace.close();
     }
   }
 
@@ -2211,8 +2220,13 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     char *ModNameDup = strdup(ModName);
     if (ModNameDup){
-      auto access = std::make_tuple(ModNameDup, offset, Perm, AccessSize);
-      SPTree->access_policy[type].insert(access);
+      trace.open("trace.txt", std::ios::app | std::ios::out );
+      trace << "Object_" << type <<"|";
+      trace << offset << ":" ;
+      trace << AccessSize << ":" ;
+      trace << ModNameDup << ":";
+      trace << (char) Perm << "\n";
+      trace.close();
     }
   }
 
@@ -2221,37 +2235,12 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
 } 
 
 
-void dump_trace(){
-  std::cout << "\n\natexit() \n\n";
-
-  RangeSplaySet<> *SPTree = ExternalObjects;
-  std::ofstream log("trace.txt", std::ios_base::app | std::ios_base::out);
-     
-  for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
-    for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
-      if(!it->second.empty()){
-        log << "Object_" << it->first <<"|";
-      }
-     // log << "Offset " <<  std::get<1>(*li) << ":" ;
-     // log << "Size " <<    std::get<3>(*li) << ":" ;
-     // log << "ModName " << std::get<0>(*li) << ":";
-     // log << "Access " << (char) std::get<2>(*li) << "\n";
-      log << std::get<1>(*li) << ":" ;
-      log << std::get<3>(*li) << ":" ;
-      log << std::get<0>(*li) << ":";
-      log << (char) std::get<2>(*li) << "\n";
-
-    }
-    log << "\n";
-  }
-}
-
 //
 // Function: call_atexit
 // Description:
 //  
 //
 void call_atexit(){
- atexit(dump_trace);
+  //atexit(dump_trace);
   return;
 }
