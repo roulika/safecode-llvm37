@@ -2227,14 +2227,14 @@ void dump_trace(){
   std::ofstream log("trace.txt", std::ios_base::app | std::ios_base::out);
      
   for (auto it=SPTree->access_policy.begin(); it!=SPTree->access_policy.end(); ++it) {
-    if(!it->second.empty()){
-      log << "Object " << it->first <<": ";
-    }
     for (auto li = it->second.begin(); li != it->second.end(); li++ ) {
+      if(!it->second.empty()){
+        log << "Object_" << it->first <<"|";
+      }
       log << "ModName: " << std::get<0>(*li) << " ";
       log << "Offset: " <<  std::get<1>(*li) << " " ;
       log << "Size: " <<    std::get<3>(*li) << " " ;
-      log << "Access: " << (char) std::get<2>(*li) << "\n" << "          ";
+      log << "Access: " << (char) std::get<2>(*li) << "\n";
 
     }
     log << "\n";
