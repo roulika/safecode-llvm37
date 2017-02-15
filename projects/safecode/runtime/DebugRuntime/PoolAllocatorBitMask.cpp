@@ -2178,17 +2178,31 @@ trace_load(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Per
   void * end;
   unsigned type;
   bool fs = SPTree->find (Node, start, end, type);
+  std::string filename;
+  int error = -1;
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     if (ModName){
-       trace.open("trace.txt", std::ios::app | std::ios::out );
-       trace << "Object_" << type <<"|";
-       trace << offset << ":" ;
-       trace << AccessSize << ":" ;
-       trace << ModName << ":";
-       trace << (char) Perm << "\n";
-       trace.close();
+      filename = "trace_" + std::to_string(::getpid()) + ".txt";    
+      // Save the errno before opening the tracefile 
+      error = errno;
+      trace.open(filename, std::ios::app | std::ios::out );
+      if (trace.is_open()){
+        // Recover errno
+        errno = error;
+        trace << "Object_" << type <<"|";
+        trace << offset << ":" ;
+        trace << AccessSize << ":" ;
+        trace << ModName << ":";
+        trace << (char) Perm << "\n";
+        
+        // Save the errno before closing the tracefile
+        error = errno;
+        trace.close();
+        // Recover errno
+        errno = error;
+      }
     }
   }
 
@@ -2214,17 +2228,31 @@ trace_store(DebugPoolTy *Pool, void *Node, const char * ModName, unsigned int Pe
   void * end;
   unsigned type;
   bool fs = SPTree->find (Node, start, end, type);  
+  std::string filename;
+  int error = -1;
   if(fs){
     unsigned int offset = (char *)Node - (char *)start;
    // printf("Type: %d, Node: %p, Start: %p\n", type, Node, start);
     if (ModName){
-      trace.open("trace.txt", std::ios::app | std::ios::out );
-      trace << "Object_" << type <<"|";
-      trace << offset << ":" ;
-      trace << AccessSize << ":" ;
-      trace << ModName << ":";
-      trace << (char) Perm << "\n";
-      trace.close();
+      filename = "trace_" + std::to_string(::getpid()) + ".txt";    
+      // Save the errno before opening the tracefile 
+      error = errno;
+      trace.open(filename, std::ios::app | std::ios::out );
+      if (trace.is_open()){
+        // Recover errno
+        errno = error;
+        trace << "Object_" << type <<"|";
+        trace << offset << ":" ;
+        trace << AccessSize << ":" ;
+        trace << ModName << ":";
+        trace << (char) Perm << "\n";
+        
+        // Save the errno before closing the tracefile
+        error = errno;
+        trace.close();
+        // Recover errno
+        errno = error;
+      }
     }
   }
 
