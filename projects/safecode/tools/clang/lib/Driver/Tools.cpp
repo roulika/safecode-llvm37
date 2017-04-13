@@ -7404,6 +7404,7 @@ void freebsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     }
     CmdArgs.push_back("-lgdtoa");
     getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
+    CmdArgs.push_back("-lm");
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
   Args.ClaimAllArgs (options::OPT_disable_inline);
