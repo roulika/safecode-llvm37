@@ -6939,7 +6939,7 @@ void openbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lsoftbound_rt");
     CmdArgs.push_back("-lrt");
     CmdArgs.push_back("-lm");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
 
   if (Args.hasArg(options::OPT_memsafety)) {
@@ -6952,7 +6952,7 @@ void openbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back("-lpoolalloc_bitmap");
     }
     CmdArgs.push_back("-lgdtoa");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
   Args.ClaimAllArgs (options::OPT_disable_inline);
@@ -7388,7 +7388,7 @@ void freebsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   if (Args.hasArg(options::OPT_softbound)){
     CmdArgs.push_back("-lsoftbound_rt");
-    CmdArgs.push_back("-lstdc++");
+    ToolChain.AddCXXStdlibLibArgs (Args, CmdArgs);
     CmdArgs.push_back("-lrt");
     CmdArgs.push_back("-lm");
   }
@@ -7403,7 +7403,7 @@ void freebsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back("-lpoolalloc_bitmap");
     }
     CmdArgs.push_back("-lgdtoa");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
   Args.ClaimAllArgs (options::OPT_disable_inline);
@@ -7693,7 +7693,7 @@ void netbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
 
   if (Args.hasArg(options::OPT_softbound)){
     CmdArgs.push_back("-lsoftbound_rt");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
     CmdArgs.push_back("-lrt");
     CmdArgs.push_back("-lm");
   }
@@ -7708,7 +7708,7 @@ void netbsd::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back("-lpoolalloc_bitmap");
     }
     CmdArgs.push_back("-lgdtoa");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
   Args.ClaimAllArgs (options::OPT_disable_inline);
@@ -8239,7 +8239,7 @@ void gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lsoftbound_rt");
     CmdArgs.push_back("-lrt");
     CmdArgs.push_back("-lm");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
 
   if (Args.hasArg(options::OPT_memsafety)) {
@@ -8252,7 +8252,7 @@ void gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back("-lpoolalloc_bitmap");
     }
     CmdArgs.push_back("-lgdtoa");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
   Args.ClaimAllArgs (options::OPT_disable_inline);
@@ -8574,7 +8574,7 @@ void minix::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lsoftbound_rt");
     CmdArgs.push_back("-lrt");
     CmdArgs.push_back("-lm");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   if (Args.hasArg(options::OPT_memsafety)) {
     if (Args.hasArg(options::OPT_bbac)) {
@@ -8586,7 +8586,7 @@ void minix::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back("-lpoolalloc_bitmap");
     }
     CmdArgs.push_back("-lgdtoa");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
   Args.ClaimAllArgs (options::OPT_disable_inline);
@@ -8720,7 +8720,7 @@ void dragonfly::Linker::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-lsoftbound_rt");
     CmdArgs.push_back("-lrt");
     CmdArgs.push_back("-lm");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   if (Args.hasArg(options::OPT_memsafety)) {
     if (Args.hasArg(options::OPT_bbac)) {
@@ -8732,7 +8732,7 @@ void dragonfly::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back("-lpoolalloc_bitmap");
     }
     CmdArgs.push_back("-lgdtoa");
-    CmdArgs.push_back("-lstdc++");
+    getToolChain().AddCXXStdlibLibArgs (Args, CmdArgs);
   }
   Args.ClaimAllArgs (options::OPT_disable_rewrite_oob);
   Args.ClaimAllArgs (options::OPT_disable_inline);
