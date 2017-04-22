@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file implements a pass that tags all the pointers to be of canonical
-// format (i.e., sign extended).
+// This file implements a pass that tags all the pointers being dereferenced
+// to be of canonical format (i.e., sign extended).
 //
 //===----------------------------------------------------------------------===//
 
@@ -33,18 +33,19 @@ static RegisterPass<TagPointersToCanonical> X("tagPointersToCanonical",
 // Method: insertRuntimeCheck()
 //
 // Description:
-//  This method inserts a runtime function call before a load/store
+//  This method inserts a runtime function call before a pointer dereference
 //  instruction to make sure the pointer it is dereferencing is of the
 //  canonical format (i.e., it has the valid sign extension of either all-zero
 //  or all-one.
 //
 // Input:
-//  Inst - A pointer to a load instruction or store instruction which is
-//         dereferencing a pointer
+//  Inst - A pointer dereference instruction which is dereferencing a pointer
 //  Ptr - The pointer that is being dereferenced
+//  index - the index of the pointer in the instruction's argument list
 //
 void
-TagPointersToCanonical::insertRuntimeCheck(Instruction * Inst, Value * Ptr) {
+TagPointersToCanonical::insertRuntimeCheck(Instruction * Inst, Value * Ptr,
+                                           unsigned index) {
   Module * M = Inst->getModule();
   Type * Int8PtrType = Type::getInt8PtrTy(M->getContext());
 
@@ -74,12 +75,8 @@ TagPointersToCanonical::insertRuntimeCheck(Instruction * Inst, Value * Ptr) {
     Last = Cast;
   }
 
-  // Change the pointer operand of the load/store instruction
-  if (isa<LoadInst>(Inst)) {
-    Inst->setOperand(0, Last);
-  } else {
-    Inst->setOperand(1, Last);
-  }
+  // Change the pointer operand of the instruction
+  Inst->setOperand(index, Last);
 }
 
 //
@@ -98,20 +95,31 @@ bool
 TagPointersToCanonical::runOnModule(Module & M) {
   bool modified = false;
 
-  // Iterate over all the instructions, searching for load/store
+  // Iterate over all the instructions, searching for pointer dereferences
   for (Function & F : M) {
     for (auto I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-      LoadInst * Load = dyn_cast<LoadInst>(&*I);
-      StoreInst * Store = dyn_cast<StoreInst>(&*I);
-      Value * Ptr = nullptr;
-      if (Load) {
-        Ptr = Load->getPointerOperand();
-        insertRuntimeCheck(Load, Ptr);
+      // Load instruction
+      if (LoadInst * Load = dyn_cast<LoadInst>(&*I)) {
+        Value * Ptr = Load->getPointerOperand();
+        insertRuntimeCheck(Load, Ptr, 0);
         modified = true;
       }
-      if (Store) {
-        Ptr = Store->getPointerOperand();
-        insertRuntimeCheck(Store, Ptr);
+      // Store instruction
+      else if (StoreInst * Store = dyn_cast<StoreInst>(&*I)) {
+        Value * Ptr = Store->getPointerOperand();
+        insertRuntimeCheck(Store, Ptr, 1);
+        modified = true;
+      }
+      // Atomic compare-and-exchange instruction
+      else if (AtomicCmpXchgInst * CmpX = dyn_cast<AtomicCmpXchgInst>(&*I)) {
+        Value * Ptr = CmpX->getPointerOperand();
+        insertRuntimeCheck(CmpX, Ptr, 0);
+        modified = true;
+      }
+      // Atomic read-modify-write instruction
+      else if (AtomicRMWInst * RMW = dyn_cast<AtomicRMWInst>(&*I)) {
+        Value * Ptr = RMW->getPointerOperand();
+        insertRuntimeCheck(RMW, Ptr, 0);
         modified = true;
       }
     }

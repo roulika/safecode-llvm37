@@ -33,7 +33,7 @@ public:
   }
   virtual bool runOnModule(Module & M) override;
 private:
-  void insertRuntimeCheck(Instruction * Inst, Value * Ptr);
+  void insertRuntimeCheck(Instruction * Inst, Value * Ptr, unsigned index);
 }; // end of class TagPointersToCanonical
 
 } // end namespace llvm
