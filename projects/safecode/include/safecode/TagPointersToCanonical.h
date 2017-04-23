@@ -34,6 +34,7 @@ public:
   virtual bool runOnModule(Module & M) override;
 private:
   void insertRuntimeCheck(Instruction * Inst, Value * Ptr, unsigned index);
+  bool handleIntrinsic(IntrinsicInst * Intr);
 }; // end of class TagPointersToCanonical
 
 } // end namespace llvm

@@ -18,6 +18,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Intrinsics.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -80,6 +82,45 @@ TagPointersToCanonical::insertRuntimeCheck(Instruction * Inst, Value * Ptr,
 }
 
 //
+// Method: handleIntrinsic()
+//
+// Description:
+//  This method handles all the LLVM intrinsics that access memory, inserting
+//  necessary runtime function calls before each of them.
+//
+// Input:
+//  Intr - An Intrinsic call instruction
+//
+// Output:
+//  Whether runtime function calls were inserted
+//
+bool
+TagPointersToCanonical::handleIntrinsic(IntrinsicInst * Intr) {
+  bool modified = false;
+  Value * Ptr = nullptr;
+
+  switch (Intr->getIntrinsicID()) {
+  case Intrinsic::memcpy:       // Standard C memcpy
+  case Intrinsic::memmove:      // Standard C memmove
+  case Intrinsic::vacopy:       // Variable argument copy
+    Ptr = Intr->getArgOperand(1);
+    insertRuntimeCheck(Intr, Ptr, 1);
+    // Fall-through
+  case Intrinsic::memset:       // Standard C memset
+  case Intrinsic::vastart:      // Variable argument start
+  case Intrinsic::vaend:        // Variable argument end
+  case Intrinsic::stackrestore: // Stack restore
+    Ptr = Intr->getArgOperand(0);
+    insertRuntimeCheck(Intr, Ptr, 0);
+    modified = true;
+    break;
+  default:
+    break;
+  }
+  return modified;
+}
+
+//
 // Method: runOnModule()
 //
 // Description:
@@ -121,6 +162,10 @@ TagPointersToCanonical::runOnModule(Module & M) {
         Value * Ptr = RMW->getPointerOperand();
         insertRuntimeCheck(RMW, Ptr, 0);
         modified = true;
+      }
+      // LLVM intrinsic
+      else if (IntrinsicInst * Intr = dyn_cast<IntrinsicInst>(&*I)) {
+        modified = handleIntrinsic(Intr) ? true : modified;
       }
     }
   }
