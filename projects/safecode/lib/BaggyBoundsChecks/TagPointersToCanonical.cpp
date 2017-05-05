@@ -167,6 +167,19 @@ TagPointersToCanonical::runOnModule(Module & M) {
       else if (IntrinsicInst * Intr = dyn_cast<IntrinsicInst>(&*I)) {
         modified = handleIntrinsic(Intr) ? true : modified;
       }
+      // Inline assembly code taking pointers as arguments
+      else if (CallInst * Call = dyn_cast<CallInst>(&*I)) {
+        if (Call->isInlineAsm()) {
+          for (unsigned index = 0; index < Call->getNumArgOperands(); ++index) {
+            Value * V = Call->getArgOperand(index);
+            Type * T = V->getType();
+            if (T->isPointerTy() || T->isArrayTy()) {
+              insertRuntimeCheck(Call, V, index);
+              modified = true;
+            }
+          }
+        }
+      }
     }
   }
   return modified;
