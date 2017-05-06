@@ -18,6 +18,23 @@
 extern "C" {
 
 //
+// Function: is_power_of_2()
+//
+// Description:
+//  This function determines whether a number is a power of 2.
+//
+// Input:
+//  size - A number
+//
+// Output:
+//  A non-zero value if @size is a power of 2, zero otherwise
+//
+static inline int
+is_power_of_2(size_t size) {
+  return size != 0 && (size & (size - 1)) == 0;
+}
+
+//
 // Function: __sc_bb_tag_ptr_check()
 //
 // Description:
@@ -51,6 +68,44 @@ __sc_bb_tag_ptr_check(void * ptr) {
       val &= ~ExtMask;
     }
   }
+  return (void *)val;
+}
+
+//
+// Function: __sc_bb_tag_ptr_size()
+//
+// Description:
+//  This function tags the size information (log-2-based exponent) of a
+//  memory object into the first 6 bits of a pointer's sign extension.
+//
+// Input:
+//  ptr - A pointer pointing to the memory object
+//  size - The size of the memory object (must be a power of 2)
+//
+// Output:
+//  The tagged pointer
+//
+void *
+__sc_bb_tag_ptr_size(void * ptr, size_t size) {
+  static const int SizeShift = 48;
+  static const uintptr_t SizeMask = 0x003f000000000000ul;
+
+  // Don't tag the pointer if the size is not a power of 2
+  if (!is_power_of_2(size)) {
+    return ptr;
+  }
+
+  // Get exponent
+  size_t exp = 0;
+  while (size > 1) {
+    size >>= 1;
+    ++exp;
+  }
+
+  // Do tag the pointer
+  uintptr_t val = (uintptr_t)ptr;
+  val &= ~SizeMask;               // Clear the size bits
+  val |= exp << SizeShift;        // Set the size bits
   return (void *)val;
 }
 
