@@ -143,7 +143,7 @@ __sc_bb_tag_ptr_size(void * ptr, size_t size) {
 // Output:
 //  The size of the memory object
 //
-uint64_t
+size_t
 __sc_bb_extract_obj_size(void * ptr) {
   return 1ul << get_obj_size_exp((uintptr_t)ptr);
 }
