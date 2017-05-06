@@ -35,6 +35,27 @@ is_power_of_2(size_t size) {
 }
 
 //
+// Function: get_obj_size_exp()
+//
+// Description:
+//  This function gets the log-2-based exponent of the size of a memory
+//  object from a pointer value.
+//
+// Input:
+//  ptr_val - The value of a pointer pointing to the memory object
+//
+// Output:
+//  The log-2-based exponent
+//
+static inline size_t
+get_obj_size_exp(uintptr_t ptr_val) {
+  static const int SizeShift = 48;
+  static const uintptr_t SizeMask = 0x003f000000000000ul;
+
+  return (ptr_val & SizeMask) >> SizeShift;
+}
+
+//
 // Function: __sc_bb_tag_ptr_check()
 //
 // Description:
@@ -107,6 +128,24 @@ __sc_bb_tag_ptr_size(void * ptr, size_t size) {
   val &= ~SizeMask;               // Clear the size bits
   val |= exp << SizeShift;        // Set the size bits
   return (void *)val;
+}
+
+//
+// Function: __sc_bb_extract_obj_size()
+//
+// Description:
+//  This function extracts the size of a memory object from a tagged pointer
+//  pointing to that memory object.
+//
+// Input:
+//  ptr - The tagged pointer
+//
+// Output:
+//  The size of the memory object
+//
+uint64_t
+__sc_bb_extract_obj_size(void * ptr) {
+  return 1ul << get_obj_size_exp((uintptr_t)ptr);
 }
 
 } // end of extern C
