@@ -142,25 +142,26 @@ TagPointersToCanonical::runOnModule(Module & M) {
       // Load instruction
       if (LoadInst * Load = dyn_cast<LoadInst>(&*I)) {
         Value * Ptr = Load->getPointerOperand();
-        insertRuntimeCheck(Load, Ptr, 0);
+        insertRuntimeCheck(Load, Ptr, LoadInst::getPointerOperandIndex());
         modified = true;
       }
       // Store instruction
       else if (StoreInst * Store = dyn_cast<StoreInst>(&*I)) {
         Value * Ptr = Store->getPointerOperand();
-        insertRuntimeCheck(Store, Ptr, 1);
+        insertRuntimeCheck(Store, Ptr, StoreInst::getPointerOperandIndex());
         modified = true;
       }
       // Atomic compare-and-exchange instruction
       else if (AtomicCmpXchgInst * CmpX = dyn_cast<AtomicCmpXchgInst>(&*I)) {
         Value * Ptr = CmpX->getPointerOperand();
-        insertRuntimeCheck(CmpX, Ptr, 0);
+        insertRuntimeCheck(CmpX, Ptr,
+                           AtomicCmpXchgInst::getPointerOperandIndex());
         modified = true;
       }
       // Atomic read-modify-write instruction
       else if (AtomicRMWInst * RMW = dyn_cast<AtomicRMWInst>(&*I)) {
         Value * Ptr = RMW->getPointerOperand();
-        insertRuntimeCheck(RMW, Ptr, 0);
+        insertRuntimeCheck(RMW, Ptr, AtomicRMWInst::getPointerOperandIndex());
         modified = true;
       }
       // LLVM intrinsic
