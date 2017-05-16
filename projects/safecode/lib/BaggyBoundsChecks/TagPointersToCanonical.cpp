@@ -85,14 +85,14 @@ TagPointersToCanonical::insertRuntimeCheck(Instruction * Inst, Value * Ptr,
 // Method: handleIntrinsic()
 //
 // Description:
-//  This method handles all the LLVM intrinsics that access memory, inserting
-//  necessary runtime function calls before each of them.
+//  This method handles an LLVM intrinsic that accesses memory, inserting
+//  necessary runtime function call before it.
 //
 // Input:
 //  Intr - An Intrinsic call instruction
 //
 // Output:
-//  Whether runtime function calls were inserted
+//  Whether a runtime function call was inserted
 //
 bool
 TagPointersToCanonical::handleIntrinsic(IntrinsicInst * Intr) {
