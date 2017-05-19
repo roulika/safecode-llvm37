@@ -78,7 +78,7 @@ void GlobalObject::setAlignment(unsigned Align) {
   assert((Align & (Align-1)) == 0 && "Alignment is not a power of 2!");
   assert(Align <= MaximumAlignment &&
          "Alignment is greater than MaximumAlignment!");
-  unsigned AlignmentData = Log2_32(Align) + 1;
+  unsigned AlignmentData = Log2_64(Align) + 1;
   unsigned OldData = getGlobalValueSubClassData();
   setGlobalValueSubClassData((OldData & ~AlignmentMask) | AlignmentData);
   assert(getAlignment() == Align && "Alignment representation error!");

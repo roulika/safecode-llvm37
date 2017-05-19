@@ -524,14 +524,14 @@ void EmitAssemblyHelper::CreatePasses() {
   }
 
   if (CodeGenOpts.BaggyBounds) {
-    MPM->add (new PromoteArrayAllocas());
+  //  MPM->add (new PromoteArrayAllocas());
     // run mem2reg pass to convert the loads/stores inserted by PromoteArrayAllocas to SSA form.
-    MPM->add (createPromoteMemoryToRegisterPass());
+  //  MPM->add (createPromoteMemoryToRegisterPass());
     MPM->add (new InsertBaggyBoundsChecks());
-    MPM->add (new RewriteHeapAllocations());
+  //  MPM->add (new RewriteHeapAllocations());
   }
 
-  MPM->add (new DebugInstrument());
+//  MPM->add (new DebugInstrument());
   PMBuilder.populateModulePassManager(*MPM);
   // For SAFECode, do the debug instrumentation and OOB rewriting after
   // all optimization is done.
@@ -558,7 +558,7 @@ void EmitAssemblyHelper::CreatePasses() {
       }
     }
   }
-  MPM->add (createPromoteMemoryToRegisterPass());
+//  MPM->add (createPromoteMemoryToRegisterPass());
   PMBuilder.populateModulePassManager(*MPM);
 }
 

@@ -1,13 +1,13 @@
 //===- BaggyBoundChecks.cpp - Instrumentation for Baggy Bounds ------------ --//
-// 
-//                          The SAFECode Compiler 
+//
+//                          The SAFECode Compiler
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
-// This pass aligns globals and stack allocated values to the correct power of 
+// This pass aligns globals and stack allocated values to the correct power of
 // two boundary.
 //
 //===----------------------------------------------------------------------===//
@@ -50,7 +50,7 @@ char InsertBaggyBoundsChecks::ID = 0;
 // Statistics
 
 // Register the pass
-static RegisterPass<InsertBaggyBoundsChecks> P("baggy bounds aligning", 
+static RegisterPass<InsertBaggyBoundsChecks> P("baggy bounds aligning",
                                                "Baggy Bounds Transform");
 
 //
@@ -79,8 +79,8 @@ findP2Size (unsigned long objectSize) {
 
 //
 // Description:
-//  Define BBMetaData struct type using TypeBuilder template. So for global and 
-//  stack variables, we can use this type to record their metadata when padding 
+//  Define BBMetaData struct type using TypeBuilder template. So for global and
+//  stack variables, we can use this type to record their metadata when padding
 //  and aligning them.
 //
 template<bool xcompile> class TypeBuilder<BBMetaData, xcompile> {
@@ -122,7 +122,7 @@ mustAdjustGlobalValue (GlobalValue * V) {
 
   //
   // Don't modify external global variables or variables with no uses.
-  // 
+  //
   //if (GV->isDeclaration()) {
     //return 0;
  // }
@@ -145,6 +145,9 @@ mustAdjustGlobalValue (GlobalValue * V) {
   //
   if (GV->hasAvailableExternallyLinkage()) return 0;
 
+  // TODO(sgravani): ExternalLinkage
+  // if (GV->hasExternalLinkage()) return 0;
+
   return GV;
 }
 
@@ -165,22 +168,44 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
   if (!GV) return;
   if (!GV->hasInitializer()) return;
 
+  // TODO(sgravani): Pointer types seemingly have problems. Disable them.
+  //TypeID=10 is for IntegerTyID type (which is a derived type). We want 
+  //to prevent padding and aligning pointer to strings which seems to be problematic.
+  //Note, the typeID=10 is for llvm 3.7 (the one we're using now).
+  if(GV->getValueType()->isPointerTy()){
+    if(GV->getValueType()->getPointerElementType()->getTypeID() == 10)
+      return;
+    std::cout << "Pointee Type: " << GV->getValueType()->getPointerElementType()->getTypeID() << "\n";
+  } 
+
+  std::cout << "GV Name:" << GV->getName().str() << "\n";
+  std::cout << "GV TypeID:" << GV->getValueType()->getTypeID() << "\n";
+  std::cout << "GV Section:" << GV->getSection() << "\n";
+
   //
   // Find the greatest power-of-two size that is larger than the object's
   // current size.
   //
   Type * GlobalType = GV->getType()->getElementType();
   unsigned long objectSize = TD->getTypeAllocSize(GlobalType);
+
+  std::cout << "GV ObjectSize:" << objectSize << "\n";
   if (!objectSize) return;
   unsigned long adjustedSize = objectSize + sizeof(BBMetaData);
-  unsigned int size = findP2Size (adjustedSize);
+
+  std::cout << "GV AdjustedSize:" << adjustedSize << "\n";
+  unsigned int size = findP2Size (adjustedSize); //this is the exponent of the size
+
+  std::cout << "GV P2Size:" << size << "\n";
 
   //
   // Find the optimal alignment for the memory object.  Note that we can use
   // a larger alignment than needed.
   //
-  unsigned int alignment = 1u << (size); 
-  if (GV->getAlignment() > alignment) alignment = GV->getAlignment();
+  unsigned int alignment = 1u << (size);
+  std::cout << "GV DesiredAlignment:" << alignment << "\n";
+  //  if (GV->getAlignment() > alignment) {
+  //    alignment = GV->getAlignment(); //why?
 
   //
   // Create a structure type.  The first element will be the global memory
@@ -188,7 +213,7 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
   // the third will be the metadata for this object.
   //
   Type *Int8Type = Type::getInt8Ty(GV->getContext());
-  Type *newType1 = ArrayType::get (Int8Type, (1u<<size) - adjustedSize);
+  Type *newType1 = ArrayType::get (Int8Type, ((1u<<size) - adjustedSize));
   Type *metadataType = TypeBuilder<BBMetaData, false>::get(GV->getContext());
   StructType *newType = StructType::get(GlobalType,
                                         newType1,
@@ -223,9 +248,14 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
   //
   // Create the new global memory object with the correct alignment.
   //
+  //
   GlobalValue::LinkageTypes LinkTy = GV->getLinkage();
+
+  std::cout << "GV LinkageType:" << LinkTy << "\n";
   if (GV->getLinkage() == GlobalValue::CommonLinkage)
     LinkTy = GlobalValue::WeakAnyLinkage;
+
+  std::cout << "GV NewLinkageType:" << LinkTy << "\n";
 
   GlobalVariable *GV_new = new GlobalVariable (*(GV->getParent()),
                                                  newType,
@@ -233,10 +263,20 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
                                                  LinkTy,
                                                  c,
                                                  "baggy." + GV->getName());
+
+  std::cout << "GV_new Name: " << GV_new->getName().str() << "\n";
+  std::cout << "GV_new TypeID: " << GV_new->getValueType()->getTypeID() << "\n";
+  Type* GlobalType2 = GV_new->getType()->getElementType();
+  unsigned long newsize = TD->getTypeAllocSize(GlobalType2);
+  std::cout << "GV_new Size: " << newsize << "\n";
+
   GV_new->copyAttributesFrom (GV);
-  GV_new->setAlignment(1u<<size);
-  GV_new->takeName (GV);
-    
+  GV_new->setAlignment (1u<<size);
+  GV_new->takeName (GV); 
+  std::cout << "GV_new Alignment after setAlignment(): " << GV_new->getAlignment() << "\n";
+ 
+  std::cout << "GV_new Name after takeName(): " << GV_new->getName().str() << "\n";
+  std::cout << "====================================\n";
   //
   // Create a GEP expression that will represent the global value and replace
   // all uses of the global value with the new constant GEP.
@@ -245,11 +285,12 @@ InsertBaggyBoundsChecks::adjustGlobalValue (GlobalValue * V) {
   Value *Zero = ConstantInt::getSigned(Int32Type, 0);
   Value *idx1[2] = {Zero, Zero};
   Constant *init = ConstantExpr::getGetElementPtr(newType, GV_new, idx1, 2);
+
   GV->replaceAllUsesWith(init);
   GV->eraseFromParent();
-
   return;
 }
+
 
 //
 // Method: adjustAlloca()
@@ -264,7 +305,7 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   // Get the power-of-two size for the alloca.
   //
   unsigned objectSize = TD->getTypeAllocSize (AI->getAllocatedType());
-  
+
   //
   // If the allocation allocates an array, then the allocated size is a
   // multiplication.
@@ -290,12 +331,12 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   //
   Type *newType1 = ArrayType::get(Int8Type, (1<<size) - adjustedSize);
   Type *metadataType = TypeBuilder<BBMetaData, false>::get(AI->getContext());
-  
+
   Type *ty = AI->getType()->getElementType();
   if (AI->isArrayAllocation()) {
     ty = ArrayType::get(Int8Type, objectSize);
   }
-  
+
   std::vector<Type *> StructElements;
   StructElements.push_back (ty);
   StructElements.push_back (newType1);
@@ -340,7 +381,7 @@ InsertBaggyBoundsChecks::adjustAlloca (AllocaInst * AI) {
   }
 
   AI->replaceAllUsesWith(init);
-  AI->removeFromParent(); 
+  AI->removeFromParent();
   AI_new->setName(AI->getName());
 
   return;
@@ -427,7 +468,7 @@ InsertBaggyBoundsChecks::adjustArgv (Function * F) {
 //  0 - The function does not need to be cloned for baggy bounds checking.
 //  1 - The function need to be cloned for baggy bounds checking.
 //
-bool 
+bool
 mustCloneFunction (Function * F) {
   if (F->isDeclaration()) return 0;
 
@@ -441,7 +482,7 @@ mustCloneFunction (Function * F) {
   //
   // Loop over all the arguments of the function. If one argument has the byval
   // attribute and has use, then this function need to be cloned.
-  //  
+  //
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end();
        I != E; ++I) {
     if (I->hasByValAttr()) {
@@ -457,64 +498,64 @@ mustCloneFunction (Function * F) {
 // Baggy bounds specific version of the CloneFunctionInto() function
 // found in the llvm file lib/Transforms/Utils/CloneFunction.cpp.
 //
-// An outline of the processing of the function follows, with 
+// An outline of the processing of the function follows, with
 // deltas from the original version noted:
 //
-// 1) Instead of setting the attributes of the new function, this 
+// 1) Instead of setting the attributes of the new function, this
 //    version of cloneFunctionInto() simply verifies that:
 //
-//    a) Non byval or unused parameters have identical type 
+//    a) Non byval or unused parameters have identical type
 //       and alignment.
 //
-//    b) used byval parameters must have different type and 
-//       and alignment.  
+//    b) used byval parameters must have different type and
+//       and alignment.
 //
 //    c) The target type of the pointer type of each OldFunc
-//       used byval parameter must match the type of the first 
-//       argument of the structure type that is the target type 
+//       used byval parameter must match the type of the first
+//       argument of the structure type that is the target type
 //       matching NewFunc parameter.
 //
 //    c) VMap is setup as expected.  Specifically, each OldFunc
-//       parameter must map to the matching parameter of the 
+//       parameter must map to the matching parameter of the
 //       NewFunc.
 //
-// 2) Unlike the original version of the function, loop over all 
-//    the used byval arguments in the old function.  For each such 
-//    argument, 
-// 
-//    a) If we haven't created it already, create a basic block 
+// 2) Unlike the original version of the function, loop over all
+//    the used byval arguments in the old function.  For each such
+//    argument,
+//
+//    a) If we haven't created it already, create a basic block
 //       for the new function.
 //
 //    b) Find the associated byval argument of the new function,
 //       We do this by simply looking it up in VMap[].
 //
-//    c) construct a GEP instruction that computes a pointer 
+//    c) construct a GEP instruction that computes a pointer
 //       to the copy of the byval argument in the old function
 //       that resides in the structure pointed to by the associated
-//       argument in the new function, and stores this value in a 
+//       argument in the new function, and stores this value in a
 //       SSA virtual register.
-//    
-//       In passing, insert the GEP instruction into the new 
+//
+//       In passing, insert the GEP instruction into the new
 //       basic block we inserted in the new function.
-// 
-// 3) Clone the basic blocks of the old function into the new, as 
-//    per the original version of the function.  Like the original 
-//    version, transform the old arguments into references to 
+//
+// 3) Clone the basic blocks of the old function into the new, as
+//    per the original version of the function.  Like the original
+//    version, transform the old arguments into references to
 //    the associated VMap values
 //
-// 4) Assuming it was created, add an unconditional branch from the 
-//    end of the basic block created in 2) above to the first 
+// 4) Assuming it was created, add an unconditional branch from the
+//    end of the basic block created in 2) above to the first
 //    basic block cloned from the old function.
 //
 //                                            JRM -- 2/5/12
 //
-void 
-InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc, 
+void
+InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
                   const Function *OldFunc,
                   ValueToValueMapTy &VMap,
                   bool ModuleLevelChanges,
                   SmallVectorImpl<ReturnInst*> &Returns,
-                  const char *NameSuffix, 
+                  const char *NameSuffix,
                   ClonedCodeInfo *CodeInfo,
                   ValueMapTypeRemapper *TypeMapper) {
   assert(NameSuffix && "NameSuffix cannot be null!");
@@ -524,10 +565,10 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
        E = OldFunc->arg_end(); I != E; ++I)
     assert(VMap.count(I) && "No mapping from source argument specified!");
 
-  // scan the parameters of the old and new functions.  Unused and/or 
+  // scan the parameters of the old and new functions.  Unused and/or
   // non-byval parameters should have the same type and alignment.  Used
-  // byval parameters from the old function must be the first argument 
-  // of structure type that is the type of the coresponding argument in 
+  // byval parameters from the old function must be the first argument
+  // of structure type that is the type of the coresponding argument in
   // the new function.
   {
     int i = 1;
@@ -541,80 +582,80 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
       assert((Io->hasByValAttr() == In->hasByValAttr()) &&
              "old/new function parameter byval attribute mismatch!");
 
-      // The use_empty attributes of all the new function parameters 
-      // must be set, since the function at present should not 
+      // The use_empty attributes of all the new function parameters
+      // must be set, since the function at present should not
       // contain any code.
       assert((In->user_empty()) &&
              "new function parameter not use_empty?");
 
-      // verify that the VMap maps the parameter of the old function to 
+      // verify that the VMap maps the parameter of the old function to
       // those of the new function in listed order.
-      assert((VMap[Io] == In) && 
+      assert((VMap[Io] == In) &&
              "Unexpected mapping between params of old and new fcns.");
 
       if (!Io->hasByValAttr() || Io->user_empty()) {
-        // verify that arguments without byval are of same type and 
-        // alignment. 
+        // verify that arguments without byval are of same type and
+        // alignment.
         assert((Io->getType() == In->getType()) &&
                "non byval or use_empty type mismatch");
-        assert((OldFunc->getParamAlignment(i) == NewFunc->getParamAlignment(i)) 
+        assert((OldFunc->getParamAlignment(i) == NewFunc->getParamAlignment(i))
                && "non byval or use_empty alignment mismatch");
 
       } else /* Io->hasByValAttr() && !Io->use_empty() */ {
 
         assert((Io->getType() != In->getType()) &&
                "types of used byval arguments matches!");
-        
+
         PointerType *oldTypePtr = dyn_cast<PointerType>(Io->getType());
-        assert((oldTypePtr != NULL) && 
+        assert((oldTypePtr != NULL) &&
                 "old used byval argument type not PointerType!");
-        
+
         PointerType *newTypePtr = dyn_cast<PointerType>(In->getType());
-        assert((newTypePtr != NULL) && 
+        assert((newTypePtr != NULL) &&
                 "new used byval argument type not PointerType!");
 
-        StructType * newStructType =  
+        StructType * newStructType =
            dyn_cast<StructType>(newTypePtr->getElementType());
 
-        assert((newStructType != NULL) && 
+        assert((newStructType != NULL) &&
                 "new used byval argument not ptr to StructType!");
 
         assert((newStructType->getNumElements() == 3) &&
                 "new used byval argument struct type doesn't have 3 fields!");
 
-        assert((newStructType->getElementType(0) == 
+        assert((newStructType->getElementType(0) ==
                  oldTypePtr->getElementType()) &&
                "new used byval arg struct first field != old byval tgt type.");
 
       }
       ++Io;
-      ++In; 
+      ++In;
       ++i;
     }
   }
-#endif 
+#endif
 
-  // Loop over all the used byval arguments in the old function.  For 
-  // each such argument, 
-  // 
-  // 0) If we haven't created it already, create a basic block for the 
+  // Loop over all the used byval arguments in the old function.  For
+  // each such argument,
+  //
+  // 0) If we haven't created it already, create a basic block for the
   //    new function.
   //
   // 1) find the associated byval argument of the new function,
   //    we do this by simply looking it up in VMap[].
   //
-  // 2) construct a GEP instruction that computes a pointer 
+  // 2) construct a GEP instruction that computes a pointer
   //    to the copy of the byval argument in the old function
   //    that resides in the structure pointed to by the associated
-  //    argument in the new function, and stores this value in a 
+  //    argument in the new function, and stores this value in a
   //    SSA virtual register.
-  //    
-  //    In passing, insert the GEP instruction into the new 
+  //
+  //    In passing, insert the GEP instruction into the new
   //    basic block we inserted in the new function.
   //
-  // 3) Modify the VMap, so that it associates the byval parameter in 
-  //    old function with the new SSA register.  Note that on entry 
-  //    VMap associates the byval parameter in the old function with 
+  // 3) Modify the VMap, so that it associates the byval parameter in
+  //    old function with the new SSA register.  Note that on entry
+  //    VMap associates the byval parameter in the old function with
   //    the corresponding parameter in the new function.
 
   BasicBlock * header_blk = NULL;
@@ -629,10 +670,10 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
 
       if (Io->hasByValAttr() && !Io->user_empty()) {
 
-        // construct a basic block for the new function if we haven't 
+        // construct a basic block for the new function if we haven't
         // done so already.
         if ( header_blk == NULL ) {
-          header_blk = BasicBlock::Create(NewFunc->getContext(), "header", 
+          header_blk = BasicBlock::Create(NewFunc->getContext(), "header",
                                           NewFunc);
           IRBuilder<> builder(header_blk);
         }
@@ -641,14 +682,14 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
         Idx[0] = ConstantInt::get(Type::getInt32Ty(NewFunc->getContext()), 0);
         Idx[1] = ConstantInt::get(Type::getInt32Ty(NewFunc->getContext()), 0);
 
-        GetElementPtrInst * gep_inst = 
+        GetElementPtrInst * gep_inst =
 	  GetElementPtrInst::CreateInBounds(VMap[Io], Idx,
                                  (VMap[Io])->getName() + ".cooked", header_blk);
 
         VMap[Io] = gep_inst;
       }
       ++Io;
-      ++In; 
+      ++In;
     }
   }
 
@@ -680,7 +721,7 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
     if (BB.hasAddressTaken()) {
       Constant *OldBBAddr = BlockAddress::get(const_cast<Function*>(OldFunc),
                                               const_cast<BasicBlock*>(&BB));
-      VMap[OldBBAddr] = BlockAddress::get(NewFunc, CBB);                         
+      VMap[OldBBAddr] = BlockAddress::get(NewFunc, CBB);
     }
 
     // Note return instructions for the caller.
@@ -698,7 +739,7 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
                        ModuleLevelChanges ? RF_None : RF_NoModuleLevelChanges,
                        TypeMapper);
 
-  // Assuming it exists, add an unconditional branch from the end of the 
+  // Assuming it exists, add an unconditional branch from the end of the
   // header block to the first block cloned over from the old function.
   if ( header_blk != NULL ) {
     assert((first_cloned_blk != NULL) && "First cloned block is NULL?!?");
@@ -713,10 +754,10 @@ InsertBaggyBoundsChecks::cloneFunctionInto(Function *NewFunc,
 // Function: cloneFunction()
 //
 // Description:
-//  It clones a function when dealing with byval argments for baggy bounds 
+//  It clones a function when dealing with byval argments for baggy bounds
 //  checking. The cloned function pads and aligns the byvalue arguments in
 //  the original function. After cloned, the original function calls this
-//  cloned function, so that externel code and indirect calls use the original 
+//  cloned function, so that externel code and indirect calls use the original
 //  to call the cloned function.
 //
 Function *
@@ -725,7 +766,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
   Type *Int8Type = Type::getInt8Ty(F->getContext());
   Value *zero = ConstantInt::get(Type::getInt32Ty(F->getContext()), 0);
   Value *Idx[] = { zero, zero };
-  
+
   // Get the function type.
   FunctionType *FTy = F->getFunctionType();
 
@@ -736,15 +777,15 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
   std::vector<Type*> NTP;
 
   // Vector to store the alignment size of new padded types.
-  std::vector<unsigned int> LEN; 
+  std::vector<unsigned int> LEN;
 
   unsigned int i = 0;
-  
+
   //
   // Loop over all the arguments of the function. If one argument has the byval
   // attribute, it will be padded and push into the vector; If it does not have
   // the byval attribute, it will be pushed into the vector without any change.
-  // Then all the types in vector will be used to create the clone function.  
+  // Then all the types in vector will be used to create the clone function.
   //
   for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end();
        I != E; ++I, ++i) {
@@ -752,7 +793,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
     // Deal with the argument that without byval attribute
     if (!I->hasByValAttr()) {
       TP.push_back(FTy->getParamType(i));
-      continue; 
+      continue;
     }
 
     // Deal with the argument that with byval attribute, but without use.
@@ -776,8 +817,8 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
     LEN.push_back(alignment);
 
     //
-    // Create a structure type to pad the argument. The first element will 
-    // be the argument's type; the second will be an array of bytes that 
+    // Create a structure type to pad the argument. The first element will
+    // be the argument's type; the second will be an array of bytes that
     // will pad the size out; the third will be the metadata type.
     //
     Type *newType1 = ArrayType::get(Int8Type, alignment - adjustedSize);
@@ -808,7 +849,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
 
     for (Function::arg_iterator Io = F->arg_begin(), Eo = F->arg_end(),
                                 In = NewF->arg_begin(), En = NewF->arg_end();
-         (Io != Eo) && (In != En); 
+         (Io != Eo) && (In != En);
          ++Io, ++In, ++i) {
       // set argument names
       In->setName(Io->getName());
@@ -864,7 +905,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
   //
   // Look over all arguments. If the argument has byval attribute,
   // alloca its padded new type, store the argument's value into
-  // it, and push the allocated type into the vector. If the 
+  // it, and push the allocated type into the vector. If the
   // argument has no such attribute, just push it into the vector.
   //
 
@@ -877,7 +918,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
       args.push_back(I);
        continue;
      }
-      
+
     Type* newType = *iter++;
     AllocaInst *AINew = new AllocaInst(newType, "", BB);
     AINew->setAlignment(TD->getTypeAllocSize(newType));
@@ -889,7 +930,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
     new StoreInst(LINew, GEPNew, BB);
     args.push_back(AINew);
   }
-   
+
   //
   // Use the arguments in the vector to call the cloned function.
   //
@@ -904,7 +945,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
   } else {
     ReturnInst::Create(F->getContext(), call_to_new_func, BB);
   }
-  
+
   return NewF;
 }
 
@@ -913,7 +954,7 @@ InsertBaggyBoundsChecks::cloneFunction (Function * F) {
 //
 // Description:
 //  It changes all the uses for the original function with byval arguments
-//  A direct call to the orignal function is replaced with a call to the 
+//  A direct call to the orignal function is replaced with a call to the
 //  cloned function.
 //
 void
@@ -922,7 +963,7 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
   Type *Int8Type = Type::getInt8Ty(F->getContext());
 
   // Vector to store the alignment size of new padded types.
-  std::vector<unsigned int> LEN; 
+  std::vector<unsigned int> LEN;
 
   //
   //Change uses so that the direct calls to the original function become direct
@@ -936,7 +977,7 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
         Instruction *InsertPoint;
         BasicBlock::iterator insrt = Caller->front().begin();
         for (; isa<AllocaInst>(InsertPoint = insrt); ++insrt) {;}
-               
+
         //
         // Create an STL container with the arguments to call the cloned
         // function.
@@ -966,8 +1007,8 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
           LEN.push_back(alignment);
 
           // Create a structure type to pad the argument. The first element
-          // will be the argument's type; the second will be an array of 
-          // bytes that will pad the size out; the third will be the metadata 
+          // will be the argument's type; the second will be an array of
+          // bytes that will pad the size out; the third will be the metadata
           // type.
           //
           Type *newType1 = ArrayType::get(Int8Type, alignment - adjustedSize);
@@ -977,9 +1018,9 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
                                                 meteTP,
                                                 NULL);
 
-              
+
           Value *zero = ConstantInt::get(Type::getInt32Ty(F->getContext()),0);
-          Value *Idx[] = { zero, zero }; 
+          Value *Idx[] = { zero, zero };
           AllocaInst *AINew = new AllocaInst(newType, 0, alignment, "", InsertPoint);
           LoadInst *LINew = new LoadInst(CI->getOperand(i), "", CI);
           GetElementPtrInst *GEPNew = GetElementPtrInst::Create(newType, AINew,
@@ -988,7 +1029,7 @@ InsertBaggyBoundsChecks::callClonedFunction (Function * F, Function * NewF) {
                                                                 CI);
           new StoreInst(LINew, GEPNew, CI);
           args.push_back(AINew);
-         
+
         }
 
         // replace the original function with the cloned one.
@@ -1048,10 +1089,10 @@ InsertBaggyBoundsChecks::runOnModule (Module & M) {
     if (GlobalVariable * GV = mustAdjustGlobalValue (GI))
       varsToTransform.push_back (GV);
   }
-
   for (unsigned index = 0; index < varsToTransform.size(); ++index) {
     adjustGlobalValue (varsToTransform[index]);
   }
+
   varsToTransform.clear();
 
   //
@@ -1062,15 +1103,14 @@ InsertBaggyBoundsChecks::runOnModule (Module & M) {
   adjustAllocasFor (M.getFunction ("pool_register_stack"));
   adjustAllocasFor (M.getFunction ("pool_register_stack_debug"));
 
-
   // changes for register argv
   adjustArgv(M.getFunction ("poolargvregister"));
-  
+
   // Deal with byval argument.
   for (Module::iterator I = M.begin(), E = M.end(); I != E; ++ I) {
     Function *F = I;
     if (!mustCloneFunction(F)) continue;
-    
+
 #if 0
     Function *NewF = cloneFunction(F);
     callClonedFunction(F, NewF);
